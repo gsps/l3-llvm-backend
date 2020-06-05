@@ -1,13 +1,13 @@
 l3cps = _{ SOI ~ tree ~ EOI }
-
-tree        = _{ "(" ~ ( lett | iff | halt | app ) ~ ")" }
+tree  = _{ "(" ~ ( lett | iff | halt | app ) ~ ")" }
 
 lett          = { "let" ~ "*"? ~ "(" ~ lett_bindings  ~ ")" ~ tree }
 lett_bindings = { lett_binding+ }
 lett_binding  = { "(" ~ name ~ "(" ~ ( prim_bdg | cnt_bdg | fun_bdg ) ~ ")" ~ ")" }
 prim_bdg      = { "@" ~ value_primitive ~ argument* }
-cnt_bdg       = { "cnt" ~ "(" ~ name* ~ ")" ~ tree }
-fun_bdg       = { "fun" ~ "(" ~ name+ ~ ")" ~ tree }
+cnt_bdg       = { "cnt" ~ "(" ~ params ~ ")" ~ tree }
+fun_bdg       = { "fun" ~ "(" ~ name ~ params ~ ")" ~ tree }
+params        = { name* }
 
 iff = { "if" ~ "(" ~ "@" ~ test_primitive ~ argument ~ argument ~ ")" ~ name ~ name }
 
