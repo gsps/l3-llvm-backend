@@ -1,0 +1,26 @@
+l3cps = _{ SOI ~ tree ~ EOI }
+
+tree        = _{ "(" ~ ( lett | iff | halt | app ) ~ ")" }
+
+lett          = { "let" ~ "*"? ~ "(" ~ lett_bindings  ~ ")" ~ tree }
+lett_bindings = { lett_binding+ }
+lett_binding  = { "(" ~ name ~ "(" ~ ( prim_bdg | cnt_bdg | fun_bdg ) ~ ")" ~ ")" }
+prim_bdg      = { "@" ~ value_primitive ~ argument* }
+cnt_bdg       = { "cnt" ~ "(" ~ name* ~ ")" ~ tree }
+fun_bdg       = { "fun" ~ "(" ~ name+ ~ ")" ~ tree }
+
+iff = { "if" ~ "(" ~ "@" ~ test_primitive ~ argument ~ argument ~ ")" ~ name ~ name }
+
+halt = { "halt" ~ argument }
+
+app = { name ~ argument* }
+
+value_primitive = { "+" | "-" | "*" | "/" | "%" | "shift-left" | "shift-right" | "and" | "or" | "xor" | "byte-read" | "byte-write" | "block-alloc-" ~ block_tag | "block-tag" | "block-length" | "block-get" | "block-set!" | "id" }
+block_tag       = { ASCII_ALPHANUMERIC }
+test_primitive  = { "<=" | "<" | "=" }
+
+argument  = _{ name | literal }
+name      = @{ ASCII_ALPHA ~ ( ASCII_ALPHANUMERIC | "-" | "_" )* }
+literal   = @{ "0" | "-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
+
+WHITESPACE = _{ " " | "\t" | NEWLINE }
