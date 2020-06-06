@@ -154,7 +154,8 @@ impl<'a> Program<'a> {
   pub fn from_raw_tree(tree: Box<Tree<'a>>) -> Self {
     use Tree::*;
 
-    // Rewrite AppC into AppF if name refers to a function
+    // During parsing, all applications are represented as AppCs, to avoid the need for
+    // name analyis. This function rewrites AppCs into AppFs when they refer to functions.
     fn fix_apps<'a>(seen_funs: &mut HashSet<Name<'a>>, tree: &mut Tree<'a>) -> () {
       match tree {
         LetP { body, .. } => fix_apps(seen_funs, body),
@@ -203,6 +204,8 @@ impl<'a> Program<'a> {
       }
     }
 
+    // Populates `symbols` with the functions and continuations found in `tree`.
+    // (We assume that all names are globally unique.)
     fn register_symbols<'a>(symbols: &mut Symbols<'a>, tree: &Tree<'a>) -> () {
       match tree {
         LetP { body, .. } => register_symbols(symbols, body),

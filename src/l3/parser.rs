@@ -9,7 +9,7 @@ use pest::error::Error;
 #[grammar = "l3/l3-cps.pest"]
 pub struct L3CPSParser;
 
-fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
+pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
     use pest::iterators::{Pair, Pairs};
 
     fn parse_name(pair: Pair<Rule>) -> Name {
@@ -153,7 +153,7 @@ fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
         Rule::tree
         | Rule::EOI
         | Rule::WHITESPACE => unreachable!(),
-        ru => { println!("Rule: {:?}", ru); panic!("UH") }
+        _ => unreachable!()
       }
     }
 
