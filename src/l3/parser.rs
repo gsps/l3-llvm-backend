@@ -2,177 +2,223 @@ extern crate pest;
 
 use super::ast::*;
 
-pub use pest::Parser;
 use pest::error::Error;
+pub use pest::Parser;
 
 #[derive(Parser)]
 #[grammar = "l3/l3-cps.pest"]
 pub struct L3CPSParser;
 
 pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
-    use pest::iterators::{Pair, Pairs};
+  use pest::iterators::{Pair, Pairs};
 
-    fn parse_name(pair: Pair<Rule>) -> Name {
-      Name(pair.as_str())
+  fn parse_name(pair: Pair<Rule>) -> Name {
+    Name(pair.as_str())
+  }
+
+  fn parse_arg(pair: Pair<Rule>) -> Arg {
+    match pair.as_rule() {
+      Rule::name => Atom::AtomN(parse_name(pair)),
+      Rule::literal => Atom::AtomL(pair.as_str().parse().unwrap()),
+      _ => unreachable!(),
     }
+  }
 
-    fn parse_arg(pair: Pair<Rule>) -> Arg {
-      match pair.as_rule() {
-        Rule::name => Atom::AtomN(parse_name(pair)),
-        Rule::literal => Atom::AtomL(pair.as_str().parse().unwrap()),
-        _ => unreachable!(),
-      }
+  fn parse_args(pairs: Pairs<Rule>) -> Args {
+    pairs.map(|pair| parse_arg(pair)).collect()
+  }
+
+  fn parse_test_prim(pair: Pair<Rule>) -> TestPrimitive {
+    use TestPrimitive::*;
+    match pair.as_str() {
+      "<" => CPSLt,
+      "<=" => CPSLe,
+      "=" => CPSEq,
+      _ => unreachable!(),
     }
+  }
 
-    fn parse_args(pairs: Pairs<Rule>) -> Args {
-      pairs.map(|pair| parse_arg(pair)).collect()
-    }
-
-    fn parse_test_prim(pair: Pair<Rule>) -> TestPrimitive {
-      use TestPrimitive::*;
-      match pair.as_str() {
-        "<" => CPSLt,
-        "<=" => CPSLe,
-        "=" => CPSEq,
-        _ => unreachable!(),
-      }
-    }
-
-    fn parse_value_prim(pair: Pair<Rule>) -> ValuePrimitive {
-      use ValuePrimitive::*;
-      match pair.as_str() {
-        "+" => CPSAdd,
-        "-" => CPSSub,
-        "*" => CPSMul,
-        "/" => CPSDiv,
-        "%" => CPSMod,
-        "shift-left" => CPSShiftLeft,
-        "shift-right" => CPSShiftRight,
-        "and" => CPSAnd,
-        "or" => CPSOr,
-        "xor" => CPSXOr,
-        "byte-read" => CPSByteRead,
-        "byte-write" => CPSByteWrite,
-        "block-tag" => CPSBlockTag,
-        "block-length" => CPSBlockLength,
-        "block-get" => CPSBlockGet,
-        "block-set!" => CPSBlockSet,
-        "id" => CPSId,
-        s => {
-          if s.starts_with("block-alloc-") {
-            let mut pairs = pair.into_inner();
-            pairs.next();
-            CPSBlockAlloc(pairs.next().unwrap().as_str().parse().unwrap())
-          } else {
-            unreachable!()
-          }
-        },
-      }
-    }
-
-    // Update body if it is a LetC, otherwise wrap in new LetC
-    fn push_cnt<'a>(name: Name<'a>, args: Params<'a>, cnt_body: Box<Tree<'a>>, body: Box<Tree<'a>>) -> Box<Tree<'a>> {
-      let mut body = body;
-      let cnt = Rc::new(Cnt { name: name, args: args, body: cnt_body });
-      match body.as_mut() {
-        Tree::LetC { cnts, .. } => {
-          cnts.push(cnt);
-          body
-        },
-        _ => Box::new(Tree::LetC { cnts: vec![cnt], body: body })
-      }
-    }
-
-    // Update body if it is a LetF, otherwise wrap in new LetF
-    fn push_fun<'a>(name: Name<'a>, ret_cnt: Name<'a>, args: Params<'a>, fun_body: Box<Tree<'a>>, body: Box<Tree<'a>>) -> Box<Tree<'a>> {
-      let mut body = body;
-      let fun = Rc::new(Fun { name: name, retC: ret_cnt, args: args, body: fun_body });
-      match body.as_mut() {
-        Tree::LetF { funs, .. } => {
-          funs.push(fun);
-          body
-        },
-        _ => Box::new(Tree::LetF { funs: vec![fun], body: body })
-      }
-    }
-
-    fn parse_binding<'a>(pair: Pair<'a, Rule>, body: Box<Tree<'a>>) -> Box<Tree<'a>> {
-      let mut pairs = pair.into_inner();
-      let name = parse_name(pairs.next().unwrap());
-      let rhs_pair = pairs.next().unwrap();
-
-      match rhs_pair.as_rule() {
-        Rule::prim_bdg => {
-          let mut pairs = rhs_pair.into_inner();
-          let prim = parse_value_prim(pairs.next().unwrap());
-          let args = parse_args(pairs);
-          Box::new(Tree::LetP { name: name, prim: prim, args: args, body: body })
-        },
-        Rule::cnt_bdg => {
-          let mut pairs = rhs_pair.into_inner();
-          let args = pairs.next().unwrap().into_inner().map(|pair| parse_name(pair)).collect();
-          let cnt_body = parse_tree(pairs.next().unwrap());
-          push_cnt(name, args, cnt_body, body)
-        },
-        Rule::fun_bdg => {
-          let mut pairs = rhs_pair.into_inner();
-          let ret_cnt = parse_name(pairs.next().unwrap());
-          let args = pairs.next().unwrap().into_inner().map(|pair| parse_name(pair)).collect();
-          let fun_body = parse_tree(pairs.next().unwrap());
-          push_fun(name, ret_cnt, args, fun_body, body)
-        },
-        _ => unreachable!()
-      }
-    }
-
-    fn parse_tree(pair: Pair<Rule>) -> Box<Tree> {
-      match pair.as_rule() {
-        Rule::lett => {
+  fn parse_value_prim(pair: Pair<Rule>) -> ValuePrimitive {
+    use ValuePrimitive::*;
+    match pair.as_str() {
+      "+" => CPSAdd,
+      "-" => CPSSub,
+      "*" => CPSMul,
+      "/" => CPSDiv,
+      "%" => CPSMod,
+      "shift-left" => CPSShiftLeft,
+      "shift-right" => CPSShiftRight,
+      "and" => CPSAnd,
+      "or" => CPSOr,
+      "xor" => CPSXOr,
+      "byte-read" => CPSByteRead,
+      "byte-write" => CPSByteWrite,
+      "block-tag" => CPSBlockTag,
+      "block-length" => CPSBlockLength,
+      "block-get" => CPSBlockGet,
+      "block-set!" => CPSBlockSet,
+      "id" => CPSId,
+      s => {
+        if s.starts_with("block-alloc-") {
           let mut pairs = pair.into_inner();
-          let bindings_pairs = pairs.next().unwrap().into_inner();
-          let body = parse_tree(pairs.next().unwrap());
-          bindings_pairs.rfold(body, |acc, pair| parse_binding(pair, acc))
-        },
-        Rule::app => {
-          let mut pairs = pair.into_inner();
-          let name = parse_name(pairs.next().unwrap());
-          let args = parse_args(pairs);
-          Box::new(Tree::AppC { cnt: name, args: args })
-        },
-        Rule::iff => {
-          let mut pairs = pair.into_inner();
-          let cond = parse_test_prim(pairs.next().unwrap());
-          let arg1 = parse_arg(pairs.next().unwrap());
-          let arg2 = parse_arg(pairs.next().unwrap());
-          let cnt1 = parse_name(pairs.next().unwrap());
-          let cnt2 = parse_name(pairs.next().unwrap());
-          Box::new(Tree::If { cond: cond, args: vec![arg1, arg2], thenC: cnt1, elseC: cnt2 })
-        },
-        Rule::halt =>
-          Box::new(Tree::Halt { arg: parse_arg(pair.into_inner().next().unwrap()) }),
-        Rule::tree
-        | Rule::EOI
-        | Rule::WHITESPACE => unreachable!(),
-        _ => unreachable!()
+          pairs.next();
+          CPSBlockAlloc(pairs.next().unwrap().as_str().parse().unwrap())
+        } else {
+          unreachable!()
+        }
       }
     }
+  }
 
-    let parsed = L3CPSParser::parse(Rule::tree, input)?.next().unwrap();
-    let tree = parse_tree(parsed);
-    let program = Program::from_raw_tree(tree);
-    Ok(program)
+  // Update body if it is a LetC, otherwise wrap in new LetC
+  fn push_cnt<'a>(
+    name: Name<'a>,
+    args: Params<'a>,
+    cnt_body: Box<Tree<'a>>,
+    body: Box<Tree<'a>>,
+  ) -> Box<Tree<'a>> {
+    let mut body = body;
+    let cnt = Rc::new(Cnt {
+      name: name,
+      args: args,
+      body: cnt_body,
+    });
+    match body.as_mut() {
+      Tree::LetC { cnts, .. } => {
+        cnts.push(cnt);
+        body
+      }
+      _ => Box::new(Tree::LetC {
+        cnts: vec![cnt],
+        body: body,
+      }),
+    }
+  }
+
+  // Update body if it is a LetF, otherwise wrap in new LetF
+  fn push_fun<'a>(
+    name: Name<'a>,
+    ret_cnt: Name<'a>,
+    args: Params<'a>,
+    fun_body: Box<Tree<'a>>,
+    body: Box<Tree<'a>>,
+  ) -> Box<Tree<'a>> {
+    let mut body = body;
+    let fun = Rc::new(Fun {
+      name: name,
+      retC: ret_cnt,
+      args: args,
+      body: fun_body,
+    });
+    match body.as_mut() {
+      Tree::LetF { funs, .. } => {
+        funs.push(fun);
+        body
+      }
+      _ => Box::new(Tree::LetF {
+        funs: vec![fun],
+        body: body,
+      }),
+    }
+  }
+
+  fn parse_binding<'a>(pair: Pair<'a, Rule>, body: Box<Tree<'a>>) -> Box<Tree<'a>> {
+    let mut pairs = pair.into_inner();
+    let name = parse_name(pairs.next().unwrap());
+    let rhs_pair = pairs.next().unwrap();
+
+    match rhs_pair.as_rule() {
+      Rule::prim_bdg => {
+        let mut pairs = rhs_pair.into_inner();
+        let prim = parse_value_prim(pairs.next().unwrap());
+        let args = parse_args(pairs);
+        Box::new(Tree::LetP {
+          name: name,
+          prim: prim,
+          args: args,
+          body: body,
+        })
+      }
+      Rule::cnt_bdg => {
+        let mut pairs = rhs_pair.into_inner();
+        let args = pairs
+          .next()
+          .unwrap()
+          .into_inner()
+          .map(|pair| parse_name(pair))
+          .collect();
+        let cnt_body = parse_tree(pairs.next().unwrap());
+        push_cnt(name, args, cnt_body, body)
+      }
+      Rule::fun_bdg => {
+        let mut pairs = rhs_pair.into_inner();
+        let ret_cnt = parse_name(pairs.next().unwrap());
+        let args = pairs
+          .next()
+          .unwrap()
+          .into_inner()
+          .map(|pair| parse_name(pair))
+          .collect();
+        let fun_body = parse_tree(pairs.next().unwrap());
+        push_fun(name, ret_cnt, args, fun_body, body)
+      }
+      _ => unreachable!(),
+    }
+  }
+
+  fn parse_tree(pair: Pair<Rule>) -> Box<Tree> {
+    match pair.as_rule() {
+      Rule::lett => {
+        let mut pairs = pair.into_inner();
+        let bindings_pairs = pairs.next().unwrap().into_inner();
+        let body = parse_tree(pairs.next().unwrap());
+        bindings_pairs.rfold(body, |acc, pair| parse_binding(pair, acc))
+      }
+      Rule::app => {
+        let mut pairs = pair.into_inner();
+        let name = parse_name(pairs.next().unwrap());
+        let args = parse_args(pairs);
+        Box::new(Tree::AppC {
+          cnt: name,
+          args: args,
+        })
+      }
+      Rule::iff => {
+        let mut pairs = pair.into_inner();
+        let cond = parse_test_prim(pairs.next().unwrap());
+        let arg1 = parse_arg(pairs.next().unwrap());
+        let arg2 = parse_arg(pairs.next().unwrap());
+        let cnt1 = parse_name(pairs.next().unwrap());
+        let cnt2 = parse_name(pairs.next().unwrap());
+        Box::new(Tree::If {
+          cond: cond,
+          args: vec![arg1, arg2],
+          thenC: cnt1,
+          elseC: cnt2,
+        })
+      }
+      Rule::halt => Box::new(Tree::Halt {
+        arg: parse_arg(pair.into_inner().next().unwrap()),
+      }),
+      Rule::tree | Rule::EOI | Rule::WHITESPACE => unreachable!(),
+      _ => unreachable!(),
+    }
+  }
+
+  let parsed = L3CPSParser::parse(Rule::tree, input)?.next().unwrap();
+  let tree = parse_tree(parsed);
+  let program = Program::from_raw_tree(tree);
+  Ok(program)
 }
-
 
 macro_rules! parse_test {
   ($name:ident, $example:expr) => {
     #[test]
     fn $name() {
-      let _res = parse_l3cps_program($example)
-        .unwrap_or_else(|e| { panic!("Parsing error: {}", e) });
+      let _res = parse_l3cps_program($example).unwrap_or_else(|e| panic!("Parsing error: {}", e));
       // println!("Successfully parsed: {:#?}", res);
     }
-  }
+  };
 }
 
 parse_test!(test_halt, "(halt 0)");
@@ -184,15 +230,29 @@ parse_test!(test_app_fwithnums, "(f999 r88 g7)");
 parse_test!(test_if_lt, "(if (@< 0 x) c1 c2)");
 parse_test!(test_if_le, "(if (@<= x y) c1 c2)");
 parse_test!(test_if_eq, "(if (@= x y) c1 c2)");
-parse_test!(test_let_one_prim,    "(let ((a (@id 0))) (halt a))");
-parse_test!(test_let_many_prims,  "(let* ((a (@id 0)) (b (@+ 1 2))) (halt b))");
-parse_test!(test_let_cnt1,        "(let* ((c (cnt () (halt 0)))) (c))");
-parse_test!(test_let_cnt2,        "(let* ((c1 (cnt () (c2 0))) (c2 (cnt (x) (halt x)))) (c1))");
-parse_test!(test_let_fun1,        "(let* ((f (fun (r x) (r x)))) (halt 0))");
-parse_test!(test_let_fun2,        "(let* ((f (fun (r x) (r x))) (g (fun (r x) (f r x)))) (halt 0))");
-parse_test!(test_let_fun3,        "(let* ((f (fun (r x) (r x))) (g (fun (r x) (f r x))) (c (cnt (x) (halt x)))) (g c 0))");
+parse_test!(test_let_one_prim, "(let ((a (@id 0))) (halt a))");
+parse_test!(
+  test_let_many_prims,
+  "(let* ((a (@id 0)) (b (@+ 1 2))) (halt b))"
+);
+parse_test!(test_let_cnt1, "(let* ((c (cnt () (halt 0)))) (c))");
+parse_test!(
+  test_let_cnt2,
+  "(let* ((c1 (cnt () (c2 0))) (c2 (cnt (x) (halt x)))) (c1))"
+);
+parse_test!(test_let_fun1, "(let* ((f (fun (r x) (r x)))) (halt 0))");
+parse_test!(
+  test_let_fun2,
+  "(let* ((f (fun (r x) (r x))) (g (fun (r x) (f r x)))) (halt 0))"
+);
+parse_test!(
+  test_let_fun3,
+  "(let* ((f (fun (r x) (r x))) (g (fun (r x) (f r x))) (c (cnt (x) (halt x)))) (g c 0))"
+);
 // parse_test!(test_let_fun_bad,     "(let* ((f (fun (r x) (r x))) (f (fun (r x) (f r x)))) (halt 0))");
-parse_test!(test_fact_example, "\
+parse_test!(
+  test_fact_example,
+  "\
 (let* ((fact_1
   (fun (ret-fact x)
     (let* ((then_1 (cnt () (ret-fact 3)))
@@ -226,5 +286,5 @@ parse_test!(test_fact_example, "\
                      (v_7 (@byte-write v_2)))
                 (halt 0)))))
       (fact_1 rc v_1)))))
-(if (@= 1 v) then else))
-");
+(if (@= 1 v) then else))"
+);
