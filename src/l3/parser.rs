@@ -137,12 +137,7 @@ fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
           let mut pairs = pair.into_inner();
           let name = parse_name(pairs.next().unwrap());
           let args = parse_args(pairs);
-          // TODO: Implement this stuff properly
-          Box::new(if args.is_empty() {
-            Tree::AppC { cnt: name, args: vec![] }
-          } else {
-            Tree::AppF { fun: Atom::AtomN(name.clone()), retC: name, args: args }
-          })
+          Box::new(Tree::AppC { cnt: name, args: args })
         },
         Rule::iff => {
           let mut pairs = pair.into_inner();
@@ -164,7 +159,7 @@ fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
 
     let parsed = L3CPSParser::parse(Rule::tree, input)?.next().unwrap();
     let tree = parse_tree(parsed);
-    let program = Program::build_from_tree(tree);
+    let program = Program::from_raw_tree(tree);
     Ok(program)
 }
 
@@ -175,7 +170,7 @@ macro_rules! parse_test {
     fn $name() {
       let _res = parse_l3cps_program($example)
         .unwrap_or_else(|e| { panic!("Parsing error: {}", e) });
-      // println!("RES: {:#?}", res);
+      // println!("Successfully parsed: {:#?}", res);
     }
   }
 }
@@ -195,6 +190,7 @@ parse_test!(test_let_cnt1,        "(let* ((c (cnt () (halt 0)))) (c))");
 parse_test!(test_let_cnt2,        "(let* ((c1 (cnt () (c2 0))) (c2 (cnt (x) (halt x)))) (c1))");
 parse_test!(test_let_fun1,        "(let* ((f (fun (r x) (r x)))) (halt 0))");
 parse_test!(test_let_fun2,        "(let* ((f (fun (r x) (r x))) (g (fun (r x) (f r x)))) (halt 0))");
+parse_test!(test_let_fun3,        "(let* ((f (fun (r x) (r x))) (g (fun (r x) (f r x))) (c (cnt (x) (halt x)))) (g c 0))");
 // parse_test!(test_let_fun_bad,     "(let* ((f (fun (r x) (r x))) (f (fun (r x) (f r x)))) (halt 0))");
 parse_test!(test_fact_example, "\
 (let* ((fact_1
