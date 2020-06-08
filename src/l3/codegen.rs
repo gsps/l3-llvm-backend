@@ -22,7 +22,6 @@ pub struct Codegen<'a, 'ctx> {
   pub builder: &'a Builder<'ctx>,
   pub fpm: &'a PassManager<FunctionValue<'ctx>>,
   pub module: &'a Module<'ctx>,
-  rt_funs: RtFunctions<'a, 'ctx>,
   pub program: &'a Program<'a>,
 }
 
@@ -71,14 +70,12 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     module: &'a Module<'ctx>,
     program: &'a Program<'a>,
   ) -> CgResult<()> {
-    // TODO: Get rid of this in favor of just `register_rt_functions(context, module)`
-    let rt_funs = RtFunctions::new(context, module);
+    register_rt_functions(context, module);
     let mut cg = Codegen {
       context,
       builder,
       fpm,
       module,
-      rt_funs,
       program,
     };
 
@@ -136,7 +133,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       context: &'ctx Context,
       builder: Builder<'ctx>,
       module: &'a Module<'ctx>,
-      rt_funs: &'a RtFunctions<'a, 'ctx>,
       program: &'a Program<'a>,
       ret_cnt_name: Name<'a>,
       blocks: HashMap<Name<'a>, BasicBlock<'ctx>>,
@@ -145,14 +141,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     }
 
     impl<'a, 'ctx> State<'a, 'ctx> {
-      fn get_rt_fun(&self, name: &'a str) -> FunctionValue<'ctx> {
-        *self
-          .rt_funs
-          .fn_values
-          .get(&Name(name))
-          .expect("Unknown runtime function")
-      }
-
       fn add_var(&mut self, name: &Name<'a>) -> PointerValue<'ctx> {
         let ptr_value = self.builder.build_alloca(value_type(self.context), name.0);
         self.vars.insert(*name, ptr_value).unwrap();
@@ -260,7 +248,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
             },
 
             Halt { arg } => {
-              let fn_value = self.get_rt_fun("rt_halt");
+              let fn_value = get_fn_value(self.module, "rt_halt");
               let call = self
                 .builder
                 .build_call(fn_value, &[self.arg_value(arg).into()], "halt");
@@ -282,7 +270,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       context: self.context,
       builder: self.context.create_builder(),
       module: self.module,
-      rt_funs: &self.rt_funs,
       program: self.program,
       ret_cnt_name: fun.retC,
       blocks: HashMap::new(),
@@ -349,30 +336,22 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
 
 /// Runtime functions
 
-struct RtFunctions<'a, 'ctx> {
-  fn_values: HashMap<Name<'a>, FunctionValue<'ctx>>,
-}
-
-impl<'a, 'ctx> RtFunctions<'a, 'ctx> {
-  fn new(ctx: &'ctx Context, module: &Module<'ctx>) -> Self {
-    let rt_funs = [
-      ("rt_bytewrite", vec!["x"]),
-      ("rt_byteread", vec![]),
-      ("rt_halt", vec!["x"]),
-    ];
-    let mut fn_values = HashMap::new();
-    for (name, params) in rt_funs.iter() {
-      let name = Name(name);
-      let params = params.iter().map(|p| Name(p)).collect();
-      fn_values.insert(name, add_function(ctx, module, name, &params));
-    }
-    Self { fn_values }
+fn register_rt_functions<'ctx>(ctx: &'ctx Context, module: &Module<'ctx>) -> () {
+  let rt_funs = [
+    ("rt_bytewrite", vec!["x"]),
+    ("rt_byteread", vec![]),
+    ("rt_halt", vec!["x"]),
+  ];
+  for (name, params) in rt_funs.iter() {
+    let name = Name(name);
+    let params = params.iter().map(|p| Name(p)).collect();
+    add_function(ctx, module, name, &params);
   }
 }
 
-// Make sure the actual runtime functions are linked (l3_llvm_runtime is a dynamic library)
 use l3_llvm_runtime::*;
 
+// Make sure the actual runtime functions are linked (l3_llvm_runtime is a dynamic library)
 #[used]
 static RT_BYTEWRITE: extern "C" fn(u32) -> u32 = rt_bytewrite;
 #[used]

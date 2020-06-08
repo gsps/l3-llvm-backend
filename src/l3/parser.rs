@@ -19,7 +19,7 @@ pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
   fn parse_arg(pair: Pair<Rule>) -> Arg {
     match pair.as_rule() {
       Rule::name => Atom::AtomN(parse_name(pair)),
-      Rule::literal => Atom::AtomL(pair.as_str().parse().unwrap()),
+      Rule::literal => Atom::AtomL(pair.as_str().parse::<i32>().unwrap() as u32),
       _ => unreachable!(),
     }
   }
