@@ -6,14 +6,6 @@ fn run_str<'a>(example_str: &'a str) {
   l3::codegen::compile_and_run_program(&program)
 }
 
-fn example_halt() {
-  run_str("(halt 3)");
-}
-
-fn example_if_basic() {
-  run_str("(let* ((c1 (cnt () (halt 1))) (c2 (cnt () (halt 2)))) (if (@< 2 1) c1 c2))");
-}
-
 fn main() {
   use std::io::{self, Read};
   let mut buffer = String::new();

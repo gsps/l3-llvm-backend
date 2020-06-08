@@ -12,6 +12,10 @@ path = "src/lib.rs"
 name = "l3jit"
 path = "src/bin/l3jit.rs"
 
+[[test]]
+name = "run_tests"
+path = "src/tests/run_tests.rs"
+
 [dependencies]
 l3_llvm_runtime = { path = "runtime" }
 pest = "2.1.3"

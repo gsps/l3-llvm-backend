@@ -12,7 +12,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::passes::PassManager;
 use inkwell::types::{BasicTypeEnum, IntType};
-use inkwell::values::{BasicValue, FunctionValue, IntValue, PointerValue};
+use inkwell::values::{BasicValue, BasicValueEnum, FunctionValue, IntValue, PointerValue};
 use inkwell::{IntPredicate, OptimizationLevel};
 
 type CgResult<T> = Result<T, &'static str>;
@@ -143,7 +143,8 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     impl<'a, 'ctx> State<'a, 'ctx> {
       fn add_var(&mut self, name: &Name<'a>) -> PointerValue<'ctx> {
         let ptr_value = self.builder.build_alloca(value_type(self.context), name.0);
-        self.vars.insert(*name, ptr_value).unwrap();
+        let old_opt = self.vars.insert(*name, ptr_value);
+        assert!(old_opt.is_none());
         ptr_value
       }
 
@@ -211,15 +212,21 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
               ret_cnt,
               args,
             } => {
-              // TODO: Handle args!
               let fun = self.program.get_function(fun_name);
+              assert_eq!(fun.params.len(), args.len());
               let fn_value = get_fn_value(self.module, fun_name.0);
-              let result = self.builder.build_call(fn_value, &vec![], "call_fun");
+              let args = args
+                .iter()
+                .map(|arg| self.arg_value(arg).into())
+                .collect::<Vec<BasicValueEnum>>();
+
+              let result = self.builder.build_call(fn_value, &args, "call_fun");
               let result = result
                 .try_as_basic_value()
                 .left()
                 .expect("Failed to generate call")
                 .into_int_value();
+
               if *ret_cnt == self.ret_cnt_name {
                 self.emit_cnt_call_indirect(result);
               } else {
@@ -400,37 +407,4 @@ pub fn compile_and_run_program(program: &Program) -> () {
       unreachable!()
     }
   }
-}
-
-#[cfg(test)]
-mod tests {
-  extern crate assert_cmd;
-  use assert_cmd::Command;
-
-  macro_rules! test_run {
-    ($name:ident, $example:expr, $output:expr, $exit:expr) => {
-      #[test]
-      fn $name() {
-        let mut cmd = Command::cargo_bin("l3jit").unwrap();
-        let assert = cmd.write_stdin($example).assert().code($exit);
-        if let Some::<&'static str>(output) = $output {
-          assert.stdout(output);
-        }
-      }
-    };
-  }
-
-  test_run!(test_halt1, "(halt 0)", None, 0);
-  test_run!(
-    test_if_lt,
-    "(let* ((c1 (cnt () (halt 1))) (c2 (cnt () (halt 2)))) (if (@< 2 1) c1 c2))",
-    None,
-    2
-  );
-  test_run!(
-    test_if_le,
-    "(let* ((c1 (cnt () (halt 1))) (c2 (cnt () (halt 2)))) (if (@<= 2 2) c1 c2))",
-    None,
-    1
-  );
 }
