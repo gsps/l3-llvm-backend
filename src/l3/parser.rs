@@ -73,14 +73,14 @@ pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
   // Update body if it is a LetC, otherwise wrap in new LetC
   fn push_cnt<'a>(
     name: Name<'a>,
-    args: Params<'a>,
+    params: Params<'a>,
     cnt_body: Box<Tree<'a>>,
     body: Box<Tree<'a>>,
   ) -> Box<Tree<'a>> {
     let mut body = body;
     let cnt = Rc::new(Cnt {
       name: name,
-      args: args,
+      params: params,
       body: cnt_body,
     });
     match body.as_mut() {
@@ -99,15 +99,15 @@ pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
   fn push_fun<'a>(
     name: Name<'a>,
     ret_cnt: Name<'a>,
-    args: Params<'a>,
+    params: Params<'a>,
     fun_body: Box<Tree<'a>>,
     body: Box<Tree<'a>>,
   ) -> Box<Tree<'a>> {
     let mut body = body;
     let fun = Rc::new(Fun {
       name: name,
-      retC: ret_cnt,
-      args: args,
+      ret_cnt: ret_cnt,
+      params: params,
       body: fun_body,
     });
     match body.as_mut() {
@@ -141,26 +141,26 @@ pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
       }
       Rule::cnt_bdg => {
         let mut pairs = rhs_pair.into_inner();
-        let args = pairs
+        let params = pairs
           .next()
           .unwrap()
           .into_inner()
           .map(|pair| parse_name(pair))
           .collect();
         let cnt_body = parse_tree(pairs.next().unwrap());
-        push_cnt(name, args, cnt_body, body)
+        push_cnt(name, params, cnt_body, body)
       }
       Rule::fun_bdg => {
         let mut pairs = rhs_pair.into_inner();
         let ret_cnt = parse_name(pairs.next().unwrap());
-        let args = pairs
+        let params = pairs
           .next()
           .unwrap()
           .into_inner()
           .map(|pair| parse_name(pair))
           .collect();
         let fun_body = parse_tree(pairs.next().unwrap());
-        push_fun(name, ret_cnt, args, fun_body, body)
+        push_fun(name, ret_cnt, params, fun_body, body)
       }
       _ => unreachable!(),
     }
@@ -188,13 +188,13 @@ pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
         let cond = parse_test_prim(pairs.next().unwrap());
         let arg1 = parse_arg(pairs.next().unwrap());
         let arg2 = parse_arg(pairs.next().unwrap());
-        let cnt1 = parse_name(pairs.next().unwrap());
-        let cnt2 = parse_name(pairs.next().unwrap());
+        let then_cnt = parse_name(pairs.next().unwrap());
+        let else_cnt = parse_name(pairs.next().unwrap());
         Box::new(Tree::If {
           cond: cond,
           args: vec![arg1, arg2],
-          thenC: cnt1,
-          elseC: cnt2,
+          then_cnt: then_cnt,
+          else_cnt: else_cnt,
         })
       }
       Rule::halt => Box::new(Tree::Halt {

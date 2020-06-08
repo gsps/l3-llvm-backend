@@ -45,18 +45,18 @@ fn add_function<'a, 'ctx>(
   ctx: &'ctx Context,
   module: &Module<'ctx>,
   name: Name<'a>,
-  args: &Params<'a>,
+  params: &Params<'a>,
 ) -> FunctionValue<'ctx> {
   let ret_type = value_type(ctx);
-  let arg_types = std::iter::repeat(ret_type)
-    .take(args.len())
+  let param_types = std::iter::repeat(ret_type)
+    .take(params.len())
     .map(|f| f.into())
     .collect::<Vec<BasicTypeEnum>>();
-  let fn_type = ret_type.fn_type(&arg_types, false);
+  let fn_type = ret_type.fn_type(&param_types, false);
 
   let fn_value = module.add_function(name.0, fn_type, None);
-  for (arg, arg_name) in fn_value.get_param_iter().zip(args.iter()) {
-    arg.into_int_value().set_name(arg_name.0);
+  for (param, param_name) in fn_value.get_param_iter().zip(params.iter()) {
+    param.into_int_value().set_name(param_name.0);
   }
   fn_value
 }
@@ -81,7 +81,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
 
     let funs = cg.program.functions();
     for fun in &funs {
-      add_function(cg.context, cg.module, fun.name, &fun.args);
+      add_function(cg.context, cg.module, fun.name, &fun.params);
     }
     for fun in funs {
       cg.compile_fun(fun)?;
@@ -170,8 +170,8 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       // Call a local continuation
       fn emit_cnt_call_direct(&self, cnt_name: &Name<'a>, value_opt: Option<IntValue<'ctx>>) {
         let cnt = self.all_cnts.get(cnt_name).unwrap();
-        assert_eq!(cnt.args.len(), value_opt.iter().len());
-        for (param_name, value) in cnt.args.iter().zip(value_opt.iter()) {
+        assert_eq!(cnt.params.len(), value_opt.iter().len());
+        for (param_name, value) in cnt.params.iter().zip(value_opt.iter()) {
           self.emit_assignment(param_name, *value);
         }
         self.emit_jump_to(cnt_name);
@@ -208,9 +208,10 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
 
             AppF {
               fun: Atom::AtomN(fun_name),
-              retC,
+              ret_cnt,
               args,
             } => {
+              // TODO: Handle args!
               let fun = self.program.get_function(fun_name);
               let fn_value = get_fn_value(self.module, fun_name.0);
               let result = self.builder.build_call(fn_value, &vec![], "call_fun");
@@ -219,25 +220,25 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
                 .left()
                 .expect("Failed to generate call")
                 .into_int_value();
-              if *retC == self.ret_cnt_name {
+              if *ret_cnt == self.ret_cnt_name {
                 self.emit_cnt_call_indirect(result);
               } else {
-                self.emit_cnt_call_direct(retC, Some(result));
+                self.emit_cnt_call_direct(ret_cnt, Some(result));
               }
             }
 
             If {
               cond,
               args,
-              thenC,
-              elseC,
+              then_cnt,
+              else_cnt,
             } => {
               // TODO: Add Phi nodes where we need them!
               assert_eq!(args.len(), 2);
               let arg1 = self.arg_value(args.first().unwrap());
               let arg2 = self.arg_value(args.last().unwrap());
-              let block_then = self.blocks.get(thenC).unwrap();
-              let block_else = self.blocks.get(elseC).unwrap();
+              let block_then = self.blocks.get(then_cnt).unwrap();
+              let block_else = self.blocks.get(else_cnt).unwrap();
               let cond = match cond {
                 TestPrimitive::CPSLt => IntPredicate::SLT,
                 TestPrimitive::CPSLe => IntPredicate::SLE,
@@ -271,7 +272,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       builder: self.context.create_builder(),
       module: self.module,
       program: self.program,
-      ret_cnt_name: fun.retC,
+      ret_cnt_name: fun.ret_cnt,
       blocks: HashMap::new(),
       vars: HashMap::new(),
       all_cnts: HashMap::new(),
@@ -284,15 +285,15 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     // Create stack allocations for all bindings
 
     // Allocate function parameter bindings
-    for (arg, name) in fn_value.get_param_iter().zip(fun.args.iter()) {
+    for (param, name) in fn_value.get_param_iter().zip(fun.params.iter()) {
       let var = state.add_var(name);
-      state.builder.build_store(var, arg);
+      state.builder.build_store(var, param);
     }
 
     // Allocate continuation parameter and local bindings, register continuations
     visit_cnts(&fun.body, |cnt| {
-      for arg_name in &cnt.args {
-        state.add_var(arg_name);
+      for param_name in &cnt.params {
+        state.add_var(param_name);
       }
 
       visit_bb(

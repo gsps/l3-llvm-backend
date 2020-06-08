@@ -7,19 +7,6 @@ pub use std::rc::Rc;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Name<'a>(pub &'a str);
 
-// impl<'a> PartialEq for Name<'a> {
-//   fn eq(&self, other: &Self) -> bool {
-//     *self.0 == *other.0
-//   }
-// }
-// impl<'a> Eq for Name<'a> {}
-
-// impl<'a> Hash for Name<'a> {
-//   fn hash<H: Hasher>(&self, state: &mut H) {
-//     (*self.0).hash(state);
-//   }
-// }
-
 type BlockTag = u8;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -64,15 +51,15 @@ pub type Params<'a> = Vec<Name<'a>>;
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Cnt<'a> {
   pub name: Name<'a>,
-  pub args: Params<'a>,
+  pub params: Params<'a>,
   pub body: Box<Tree<'a>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Fun<'a> {
   pub name: Name<'a>,
-  pub retC: Name<'a>,
-  pub args: Params<'a>,
+  pub ret_cnt: Name<'a>,
+  pub params: Params<'a>,
   pub body: Box<Tree<'a>>,
 }
 
@@ -98,14 +85,14 @@ pub enum Tree<'a> {
   },
   AppF {
     fun: Arg<'a>,
-    retC: Name<'a>,
+    ret_cnt: Name<'a>,
     args: Args<'a>,
   },
   If {
     cond: TestPrimitive,
     args: Args<'a>,
-    thenC: Name<'a>,
-    elseC: Name<'a>,
+    then_cnt: Name<'a>,
+    else_cnt: Name<'a>,
   },
   Halt {
     arg: Atom<'a>,
@@ -186,7 +173,7 @@ impl<'a> Program<'a> {
               if let Atom::AtomN(ret_cnt) = first_arg.first().unwrap() {
                 *tree = Tree::AppF {
                   fun: Atom::AtomN(name),
-                  retC: *ret_cnt,
+                  ret_cnt: *ret_cnt,
                   args: args,
                 };
                 return; // Success
@@ -229,8 +216,8 @@ impl<'a> Program<'a> {
         _ => {
           let fun = Fun {
             name: Name(MAIN_FN),
-            retC: Name(MAIN_FN_RETC),
-            args: vec![],
+            ret_cnt: Name(MAIN_FN_RETC),
+            params: vec![],
             body: tree,
           };
           symbols.register_fun(Rc::new(fun))
