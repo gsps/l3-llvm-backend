@@ -11,9 +11,9 @@ use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::passes::PassManager;
-use inkwell::types::{BasicType, BasicTypeEnum, IntType};
-use inkwell::values::{BasicValue, BasicValueEnum, FunctionValue, IntValue, PointerValue};
-use inkwell::{FloatPredicate, OptimizationLevel};
+use inkwell::types::{BasicTypeEnum, IntType};
+use inkwell::values::{BasicValue, FunctionValue, IntValue, PointerValue};
+use inkwell::{IntPredicate, OptimizationLevel};
 
 type CgResult<T> = Result<T, &'static str>;
 
@@ -32,6 +32,12 @@ fn value_type<'ctx>(ctx: &'ctx Context) -> IntType<'ctx> {
 
 fn make_value<'ctx>(ctx: &'ctx Context, v: u32) -> IntValue<'ctx> {
   value_type(ctx).const_int(v.into(), false)
+}
+
+fn get_fn_value<'a, 'ctx>(module: &Module<'ctx>, name: &'a str) -> FunctionValue<'ctx> {
+  module
+    .get_function(name)
+    .expect("Expected function to be pre-registered")
 }
 
 // Register a function in the given LLVM module.
@@ -65,6 +71,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     module: &'a Module<'ctx>,
     program: &'a Program<'a>,
   ) -> CgResult<()> {
+    // TODO: Get rid of this in favor of just `register_rt_functions(context, module)`
     let rt_funs = RtFunctions::new(context, module);
     let mut cg = Codegen {
       context,
@@ -75,7 +82,11 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       program,
     };
 
-    for fun in cg.program.functions() {
+    let funs = cg.program.functions();
+    for fun in &funs {
+      add_function(cg.context, cg.module, fun.name, &fun.args);
+    }
+    for fun in funs {
       cg.compile_fun(fun)?;
     }
     Ok(())
@@ -124,7 +135,9 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     struct State<'a, 'ctx> {
       context: &'ctx Context,
       builder: Builder<'ctx>,
+      module: &'a Module<'ctx>,
       rt_funs: &'a RtFunctions<'a, 'ctx>,
+      program: &'a Program<'a>,
       ret_cnt_name: Name<'a>,
       blocks: HashMap<Name<'a>, BasicBlock<'ctx>>,
       vars: HashMap<Name<'a>, PointerValue<'ctx>>,
@@ -132,21 +145,12 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     }
 
     impl<'a, 'ctx> State<'a, 'ctx> {
-      fn new(context: &'ctx Context, rt_funs: &'a RtFunctions<'a, 'ctx>, ret_cnt_name: Name<'a>) -> Self {
-        let builder = context.create_builder();
-        Self {
-          context: context,
-          builder: builder,
-          rt_funs: rt_funs,
-          ret_cnt_name: ret_cnt_name,
-          blocks: HashMap::new(),
-          vars: HashMap::new(),
-          all_cnts: HashMap::new(),
-        }
-      }
-
       fn get_rt_fun(&self, name: &'a str) -> FunctionValue<'ctx> {
-        *self.rt_funs.fn_values.get(&Name(name)).expect("Unknown runtime function")
+        *self
+          .rt_funs
+          .fn_values
+          .get(&Name(name))
+          .expect("Unknown runtime function")
       }
 
       fn add_var(&mut self, name: &Name<'a>) -> PointerValue<'ctx> {
@@ -175,6 +179,21 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
         self.builder.build_unconditional_branch(*block);
       }
 
+      // Call a local continuation
+      fn emit_cnt_call_direct(&self, cnt_name: &Name<'a>, value_opt: Option<IntValue<'ctx>>) {
+        let cnt = self.all_cnts.get(cnt_name).unwrap();
+        assert_eq!(cnt.args.len(), value_opt.iter().len());
+        for (param_name, value) in cnt.args.iter().zip(value_opt.iter()) {
+          self.emit_assignment(param_name, *value);
+        }
+        self.emit_jump_to(cnt_name);
+      }
+
+      // Call the return continuation (i.e., return)
+      fn emit_cnt_call_indirect(&self, value: IntValue<'ctx>) {
+        self.builder.build_return(Some(&value));
+      }
+
       fn emit_block(&self, tree: &Tree<'a>) {
         visit_bb(
           tree,
@@ -185,23 +204,38 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
           },
           // Handle rest of the continuation
           |tree| match tree {
-            AppC { cnt, args } if *cnt == self.ret_cnt_name => {
-              assert_eq!(args.len(), 1);
-              let result = self.arg_value(args.first().unwrap());
-              self.builder.build_return(Some(&result));
+            AppC { cnt, args } => {
+              if *cnt == self.ret_cnt_name {
+                assert_eq!(args.len(), 1);
+                let result = self.arg_value(args.first().unwrap());
+                self.emit_cnt_call_indirect(result);
+              } else {
+                match args.as_slice() {
+                  [] => self.emit_cnt_call_direct(cnt, None),
+                  [arg] => self.emit_cnt_call_direct(cnt, Some(self.arg_value(arg))),
+                  _ => unreachable!(),
+                }
+              }
             }
 
-            AppF { .. } => unimplemented!(),
-
-            AppC {
-              cnt: cnt_name,
+            AppF {
+              fun: Atom::AtomN(fun_name),
+              retC,
               args,
             } => {
-              let cnt = self.all_cnts.get(cnt_name).unwrap();
-              for (param_name, arg) in cnt.args.iter().zip(args.iter()) {
-                self.emit_assignment(param_name, self.arg_value(arg));
+              let fun = self.program.get_function(fun_name);
+              let fn_value = get_fn_value(self.module, fun_name.0);
+              let result = self.builder.build_call(fn_value, &vec![], "call_fun");
+              let result = result
+                .try_as_basic_value()
+                .left()
+                .expect("Failed to generate call")
+                .into_int_value();
+              if *retC == self.ret_cnt_name {
+                self.emit_cnt_call_indirect(result);
+              } else {
+                self.emit_cnt_call_direct(retC, Some(result));
               }
-              self.emit_jump_to(cnt_name);
             }
 
             If {
@@ -209,12 +243,32 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
               args,
               thenC,
               elseC,
-            } => unimplemented!(),
+            } => {
+              // TODO: Add Phi nodes where we need them!
+              assert_eq!(args.len(), 2);
+              let arg1 = self.arg_value(args.first().unwrap());
+              let arg2 = self.arg_value(args.last().unwrap());
+              let block_then = self.blocks.get(thenC).unwrap();
+              let block_else = self.blocks.get(elseC).unwrap();
+              let cond = match cond {
+                TestPrimitive::CPSLt => IntPredicate::SLT,
+                TestPrimitive::CPSLe => IntPredicate::SLE,
+                TestPrimitive::CPSEq => IntPredicate::EQ,
+              };
+              let cond_value = self.builder.build_int_compare(cond, arg1, arg2, "if_branch");
+              self.builder.build_conditional_branch(cond_value, *block_then, *block_else);
+            },
 
             Halt { arg } => {
               let fn_value = self.get_rt_fun("rt_halt");
-              let call = self.builder.build_call(fn_value, &[self.arg_value(arg).into()], "halt");
-              let call = call.try_as_basic_value().left().expect("Failed to generate halt call").into_int_value();
+              let call = self
+                .builder
+                .build_call(fn_value, &[self.arg_value(arg).into()], "halt");
+              let call = call
+                .try_as_basic_value()
+                .left()
+                .expect("Failed to generate halt call")
+                .into_int_value();
               self.builder.build_return(Some(&call));
             }
 
@@ -224,8 +278,19 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       }
     }
 
-    let mut state = State::new(self.context, &self.rt_funs, fun.retC);
-    let fn_value = add_function(self.context, self.module, fun.name, &fun.args);
+    let mut state = State {
+      context: self.context,
+      builder: self.context.create_builder(),
+      module: self.module,
+      rt_funs: &self.rt_funs,
+      program: self.program,
+      ret_cnt_name: fun.retC,
+      blocks: HashMap::new(),
+      vars: HashMap::new(),
+      all_cnts: HashMap::new(),
+    };
+
+    let fn_value = get_fn_value(self.module, fun.name.0);
     let entry = self.context.append_basic_block(fn_value, "entry");
     state.builder.position_at_end(entry);
 

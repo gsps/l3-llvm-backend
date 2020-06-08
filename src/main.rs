@@ -13,6 +13,11 @@ fn example_halt() {
   example("(halt 3)");
 }
 
+fn example_if_basic() {
+  example("(let* ((c1 (cnt () (halt 1))) (c2 (cnt () (halt 2)))) (if (@< 2 1) c1 c2))");
+}
+
 fn main() {
-  example_halt();
+  // example_halt();
+  example_if_basic();
 }

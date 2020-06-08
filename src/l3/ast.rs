@@ -255,4 +255,8 @@ impl<'a> Program<'a> {
   pub fn functions(&self) -> Vec<Rc<Fun<'a>>> {
     self.symbols.funs.values().map(|fun| fun.clone()).collect()
   }
+
+  pub fn get_function(&self, name: &Name<'a>) -> Rc<Fun<'a>> {
+    self.symbols.funs.get(name).unwrap().clone()
+  }
 }
