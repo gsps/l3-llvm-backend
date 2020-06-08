@@ -164,7 +164,10 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
         match arg {
           Atom::AtomL(value) => make_value(self.context, *value),
           Atom::AtomN(arg_name) => {
-            let var = self.vars.get(arg_name).unwrap();
+            let var = self
+              .vars
+              .get(arg_name)
+              .unwrap_or_else(|| panic!("Unknown variable {:?}", arg_name));
             self.builder.build_load(*var, arg_name.0).into_int_value()
           }
         }
@@ -237,6 +240,28 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
               CPSId => next_arg(),
               CPSByteRead => self.emit_call("rt_byteread", &[], "cpsbyteread"),
               CPSByteWrite => self.emit_call("rt_bytewrite", &[next_arg().into()], "cpsbytewrite"),
+              CPSBlockAlloc(block_tag) => self.emit_call(
+                "rt_blockalloc",
+                &[
+                  make_value(self.context, block_tag as u32).into(),
+                  next_arg().into(),
+                ],
+                "cpsblockalloc",
+              ),
+              CPSBlockTag => self.emit_call("rt_blocktag", &[next_arg().into()], "cpsblocktag"),
+              CPSBlockLength => {
+                self.emit_call("rt_blocklength", &[next_arg().into()], "cpsblocklength")
+              }
+              CPSBlockGet => self.emit_call(
+                "rt_blockget",
+                &[next_arg().into(), next_arg().into()],
+                "cpsblockget",
+              ),
+              CPSBlockSet => self.emit_call(
+                "rt_blockset",
+                &[next_arg().into(), next_arg().into(), next_arg().into()],
+                "cpsblockset",
+              ),
               _ => unimplemented!(),
             };
             self.builder.build_store(*var, result);
@@ -262,6 +287,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
               ret_cnt,
               args,
             } => {
+              // TODO: Handle indirect calls (and references to functions as pointers)
               let fun = self.program.get_function(fun_name);
               assert_eq!(fun.params.len(), args.len());
 
@@ -383,9 +409,14 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
 
 fn register_rt_functions<'ctx>(ctx: &'ctx Context, module: &Module<'ctx>) -> () {
   let rt_funs = [
+    ("rt_halt", vec!["x"]),
     ("rt_bytewrite", vec!["x"]),
     ("rt_byteread", vec![]),
-    ("rt_halt", vec!["x"]),
+    ("rt_blockalloc", vec!["tag", "size"]),
+    ("rt_blocktag", vec!["block"]),
+    ("rt_blocklength", vec!["block"]),
+    ("rt_blockget", vec!["block", "offset"]),
+    ("rt_blockset", vec!["block", "offset", "value"]),
   ];
   for (name, params) in rt_funs.iter() {
     let name = Name(name);
@@ -398,11 +429,21 @@ use l3_llvm_runtime::*;
 
 // Make sure the actual runtime functions are linked (l3_llvm_runtime is a dynamic library)
 #[used]
-static RT_BYTEWRITE: extern "C" fn(u32) -> u32 = rt_bytewrite;
+static RT_HALT: extern "C" fn(Value) -> Value = rt_halt;
 #[used]
-static RT_BYTEREAD: extern "C" fn() -> u32 = rt_byteread;
+static RT_BYTEWRITE: extern "C" fn(Value) -> Value = rt_bytewrite;
 #[used]
-static RT_HALT: extern "C" fn(u32) -> u32 = rt_halt;
+static RT_BYTEREAD: extern "C" fn() -> Value = rt_byteread;
+#[used]
+static RT_BLOCKALLOC: extern "C" fn(Value, Value) -> Value = rt_blockalloc;
+#[used]
+static RT_BLOCKTAG: extern "C" fn(Value) -> Value = rt_blocktag;
+#[used]
+static RT_BLOCKLENGTH: extern "C" fn(Value) -> Value = rt_blocklength;
+#[used]
+static RT_BLOCKGET: extern "C" fn(Value, Value) -> Value = rt_blockget;
+#[used]
+static RT_BLOCKSET: extern "C" fn(Value, Value, Value) -> Value = rt_blockset;
 
 /// Entrypoint
 pub fn compile_and_run_program(program: &Program) -> () {
