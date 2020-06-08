@@ -244,9 +244,13 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
                 TestPrimitive::CPSLe => IntPredicate::SLE,
                 TestPrimitive::CPSEq => IntPredicate::EQ,
               };
-              let cond_value = self.builder.build_int_compare(cond, arg1, arg2, "if_branch");
-              self.builder.build_conditional_branch(cond_value, *block_then, *block_else);
-            },
+              let cond_value = self
+                .builder
+                .build_int_compare(cond, arg1, arg2, "if_branch");
+              self
+                .builder
+                .build_conditional_branch(cond_value, *block_then, *block_else);
+            }
 
             Halt { arg } => {
               let fn_value = get_fn_value(self.module, "rt_halt");
@@ -396,4 +400,37 @@ pub fn compile_and_run_program(program: &Program) -> () {
       unreachable!()
     }
   }
+}
+
+#[cfg(test)]
+mod tests {
+  extern crate assert_cmd;
+  use assert_cmd::Command;
+
+  macro_rules! test_run {
+    ($name:ident, $example:expr, $output:expr, $exit:expr) => {
+      #[test]
+      fn $name() {
+        let mut cmd = Command::cargo_bin("l3jit").unwrap();
+        let assert = cmd.write_stdin($example).assert().code($exit);
+        if let Some::<&'static str>(output) = $output {
+          assert.stdout(output);
+        }
+      }
+    };
+  }
+
+  test_run!(test_halt1, "(halt 0)", None, 0);
+  test_run!(
+    test_if_lt,
+    "(let* ((c1 (cnt () (halt 1))) (c2 (cnt () (halt 2)))) (if (@< 2 1) c1 c2))",
+    None,
+    2
+  );
+  test_run!(
+    test_if_le,
+    "(let* ((c1 (cnt () (halt 1))) (c2 (cnt () (halt 2)))) (if (@<= 2 2) c1 c2))",
+    None,
+    1
+  );
 }
