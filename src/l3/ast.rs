@@ -1,10 +1,10 @@
 #![allow(non_snake_case, dead_code)]
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::hash::Hash;
 pub use std::rc::Rc;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Name<'a>(pub &'a str);
 
 type BlockTag = u8;
@@ -101,15 +101,15 @@ pub enum Tree<'a> {
 
 #[derive(Debug)]
 pub struct Symbols<'a> {
-  cnts: HashMap<Name<'a>, Rc<Cnt<'a>>>,
-  funs: HashMap<Name<'a>, Rc<Fun<'a>>>,
+  cnts: BTreeMap<Name<'a>, Rc<Cnt<'a>>>,
+  funs: BTreeMap<Name<'a>, Rc<Fun<'a>>>,
 }
 
 impl<'a> Symbols<'a> {
   fn new() -> Self {
     Self {
-      cnts: HashMap::new(),
-      funs: HashMap::new(),
+      cnts: BTreeMap::new(),
+      funs: BTreeMap::new(),
     }
   }
 

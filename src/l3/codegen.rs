@@ -94,15 +94,17 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     let fun = fun.as_ref();
 
     // Visit all continuations bound in `tree`
-    fn visit_cnts<'a, F: FnMut(Rc<Cnt<'a>>) -> ()>(tree: &Tree<'a>, mut f: F) -> () {
+    fn visit_cnts<'a, F: FnMut(Rc<Cnt<'a>>) -> ()>(tree: &Tree<'a>, f: &mut F) -> () {
       match tree {
         LetC { cnts, body } => {
           for cnt in cnts {
             f(cnt.clone());
+            visit_cnts(&cnt.body, f);
           }
           visit_cnts(body, f)
         }
         LetF { .. } => unreachable!(),
+        LetP { body, .. } => visit_cnts(body, f),
         _ => (),
       }
     }
@@ -235,7 +237,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
               CPSId => next_arg(),
               CPSByteRead => self.emit_call("rt_byteread", &[], "cpsbyteread"),
               CPSByteWrite => self.emit_call("rt_bytewrite", &[next_arg().into()], "cpsbytewrite"),
-              _ => unreachable!(),
+              _ => unimplemented!(),
             };
             self.builder.build_store(*var, result);
           },
@@ -339,7 +341,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     state.add_vars_for_locals(&fun.body);
 
     // Allocate continuation parameters and locals, register continuations
-    visit_cnts(&fun.body, |cnt| {
+    visit_cnts(&fun.body, &mut |cnt| {
       for param_name in &cnt.params {
         state.add_var(param_name);
       }
@@ -358,7 +360,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     state.emit_block(&fun.body);
 
     // Emit one basic block per continuation
-    visit_cnts(&fun.body, |cnt| {
+    visit_cnts(&fun.body, &mut |cnt| {
       let block = state.blocks.get(&cnt.name).unwrap();
       state.builder.position_at_end(*block);
       state.emit_block(&cnt.body);
