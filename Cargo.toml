@@ -5,5 +5,7 @@ authors = ["Georg Schmid <georg.schmid@epfl.ch>"]
 edition = "2018"
 
 [dependencies]
+l3_llvm_runtime = { path = "runtime" }
 pest = "2.1.3"
 pest_derive = "2.1.0"
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm6-0" }

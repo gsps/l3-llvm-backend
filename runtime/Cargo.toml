@@ -1,0 +1,9 @@
+[package]
+name = "l3_llvm_runtime"
+version = "0.1.0"
+authors = ["Georg Schmid <georg.schmid@epfl.ch>"]
+edition = "2018"
+
+[lib]
+name = "l3_llvm_runtime"
+crate_type = ["dylib"]

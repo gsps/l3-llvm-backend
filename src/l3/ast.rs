@@ -22,7 +22,7 @@ pub struct Name<'a>(pub &'a str);
 
 type BlockTag = u8;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ValuePrimitive {
   CPSAdd,
   CPSSub,
@@ -44,7 +44,7 @@ pub enum ValuePrimitive {
   CPSId,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum TestPrimitive {
   CPSLt,
   CPSLe,
@@ -54,7 +54,7 @@ pub enum TestPrimitive {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Atom<'a> {
   AtomN(Name<'a>),
-  AtomL(i32),
+  AtomL(u32),
 }
 
 pub type Arg<'a> = Atom<'a>;
@@ -139,18 +139,13 @@ impl<'a> Symbols<'a> {
 
 #[derive(Debug)]
 pub struct Program<'a> {
-  tree: Box<Tree<'a>>,
   symbols: Symbols<'a>,
 }
 
-impl<'a> Program<'a> {
-  fn new(tree: Box<Tree<'a>>) -> Self {
-    Self {
-      tree: tree,
-      symbols: Symbols::new(),
-    }
-  }
+pub const MAIN_FN: &'static str = "main";
+pub const MAIN_FN_RETC: &'static str = "__main_ret_cnt";
 
+impl<'a> Program<'a> {
   pub fn from_raw_tree(tree: Box<Tree<'a>>) -> Self {
     use Tree::*;
 
@@ -227,9 +222,37 @@ impl<'a> Program<'a> {
       }
     }
 
-    let mut program = Self::new(tree);
-    fix_apps(&mut HashSet::new(), &mut program.tree);
-    register_symbols(&mut program.symbols, &program.tree);
-    program
+    // Registers the main function (assuming all functions have been hoisted)
+    fn register_main<'a>(symbols: &mut Symbols<'a>, tree: Box<Tree<'a>>) -> () {
+      match *tree {
+        LetF { body, .. } => register_main(symbols, body),
+        _ => {
+          let fun = Fun {
+            name: Name(MAIN_FN),
+            retC: Name(MAIN_FN_RETC),
+            args: vec![],
+            body: tree,
+          };
+          symbols.register_fun(Rc::new(fun))
+        }
+      }
+    }
+
+    let mut tree = tree;
+    let mut symbols = Symbols::new();
+
+    fix_apps(&mut HashSet::new(), &mut tree);
+    register_symbols(&mut symbols, &tree);
+    register_main(&mut symbols, tree);
+
+    Self { symbols }
+  }
+
+  pub fn continuations(&self) -> Vec<Rc<Cnt<'a>>> {
+    self.symbols.cnts.values().map(|cnt| cnt.clone()).collect()
+  }
+
+  pub fn functions(&self) -> Vec<Rc<Fun<'a>>> {
+    self.symbols.funs.values().map(|fun| fun.clone()).collect()
   }
 }
