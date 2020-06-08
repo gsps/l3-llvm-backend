@@ -20,7 +20,8 @@ block_tag       = { ASCII_ALPHANUMERIC }
 test_primitive  = { "<=" | "<" | "=" }
 
 argument  = _{ name | literal }
-name      = @{ ASCII_ALPHA ~ ( ASCII_ALPHANUMERIC | "-" | "_" )* }
+name      = @{ name_init ~ ( ASCII_DIGIT | name_init | "@" | "-" )* }
+name_init = @{ ASCII_ALPHA | "$" | "|" | "!" | "%" | "&" | "*" | "+" | "\\" | "." | "/" | ":" | "<" | "=" | ">" | "?" | "^" | "_" | "~" }
 literal   = @{ "0" | "-"? ~ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
 
 WHITESPACE = _{ " " | "\t" | NEWLINE }
