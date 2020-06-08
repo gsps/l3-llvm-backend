@@ -1,0 +1,963 @@
+(let* ((fun$12_1
+        (fun (ret-fun$12)
+          (let* ((t_13 (@byte-read))
+                 (t_12 (@shift-left t_13 1))
+                 (v_39 (@xor t_12 1))
+                 (then_23 (cnt () (ret-fun$12 10)))
+                 (else_23
+                  (cnt ()
+                    (let* ((v_40 (@and 257 v_39))
+                           (then_24
+                            (cnt ()
+                              (let* ((v_89 (@shift-left v_39 2))
+                                     (v_88 (@xor v_89 2)))
+                                (ret-fun$12 v_88))))
+                           (else_24
+                            (cnt ()
+                              (let* ((v_41 (@and 449 v_39))
+                                     (then_25
+                                      (cnt ()
+                                        (let* ((t_11 (@byte-read))
+                                               (t_10 (@shift-left t_11 1))
+                                               (v_87 (@xor t_10 1))
+                                               (v_83 (@and v_87 127))
+                                               (v_86 (@and 63 v_39))
+                                               (v_85 (@xor v_86 1))
+                                               (v_84 (@shift-left v_85 6))
+                                               (v_82 (@xor v_84 1))
+                                               (v_81 (@or v_82 v_83))
+                                               (v_80 (@shift-left v_81 2))
+                                               (v_79 (@xor v_80 2)))
+                                          (ret-fun$12 v_79))))
+                                     (else_25
+                                      (cnt ()
+                                        (let* ((v_42 (@and 481 v_39))
+                                               (then_26
+                                                (cnt ()
+                                                  (let* ((t_9 (@byte-read))
+                                                         (t_8
+                                                          (@shift-left t_9 1))
+                                                         (v_78 (@xor t_8 1))
+                                                         (v_73 (@and v_78 127))
+                                                         (t_7 (@byte-read))
+                                                         (t_6
+                                                          (@shift-left t_7 1))
+                                                         (v_77 (@xor t_6 1))
+                                                         (v_68 (@and v_77 127))
+                                                         (v_76 (@and 31 v_39))
+                                                         (v_75 (@xor v_76 1))
+                                                         (v_74
+                                                          (@shift-left v_75 12))
+                                                         (v_69 (@xor v_74 1))
+                                                         (v_72 (@xor v_73 1))
+                                                         (v_71
+                                                          (@shift-left v_72 6))
+                                                         (v_70 (@xor v_71 1))
+                                                         (v_67 (@or v_69 v_70))
+                                                         (v_66 (@or v_67 v_68))
+                                                         (v_65
+                                                          (@shift-left v_66 2))
+                                                         (v_64 (@xor v_65 2)))
+                                                    (ret-fun$12 v_64))))
+                                               (else_26
+                                                (cnt ()
+                                                  (let* ((t_5 (@byte-read))
+                                                         (t_4
+                                                          (@shift-left t_5 1))
+                                                         (v_63 (@xor t_4 1))
+                                                         (v_57 (@and v_63 127))
+                                                         (t_3 (@byte-read))
+                                                         (t_2
+                                                          (@shift-left t_3 1))
+                                                         (v_62 (@xor t_2 1))
+                                                         (v_54 (@and v_62 127))
+                                                         (t_1 (@byte-read))
+                                                         (t (@shift-left t_1 1))
+                                                         (v_61 (@xor t 1))
+                                                         (v_49 (@and v_61 127))
+                                                         (v_60 (@and 15 v_39))
+                                                         (v_59 (@xor v_60 1))
+                                                         (v_58
+                                                          (@shift-left v_59 18))
+                                                         (v_50 (@xor v_58 1))
+                                                         (v_56 (@xor v_57 1))
+                                                         (v_55
+                                                          (@shift-left v_56 12))
+                                                         (v_51 (@xor v_55 1))
+                                                         (v_53 (@xor v_54 1))
+                                                         (v_52
+                                                          (@shift-left v_53 6))
+                                                         (v_48 (@xor v_52 1))
+                                                         (v_46 (@or v_50 v_51))
+                                                         (v_47 (@or v_48 v_49))
+                                                         (v_45 (@or v_46 v_47))
+                                                         (v_44
+                                                          (@shift-left v_45 2))
+                                                         (v_43 (@xor v_44 2)))
+                                                    (ret-fun$12 v_43)))))
+                                          (if (@= 449 v_42) then_26 else_26)))))
+                                (if (@= 385 v_41) then_25 else_25)))))
+                      (if (@= 1 v_40) then_24 else_24)))))
+            (if (@= -1 v_39) then_23 else_23))))
+       (fun$23_1
+        (fun (ret-fun$23 c)
+          (let* ((v_90 (@shift-right c 2))
+                 (then_27
+                  (cnt ()
+                    (let* ((v_137 (@shift-right v_90 1))
+                           (v_136 (@byte-write v_137)))
+                      (ret-fun$23 v_136))))
+                 (else_27
+                  (cnt ()
+                    (let* ((then_28
+                            (cnt ()
+                              (let* ((v_134 (@shift-right v_90 6))
+                                     (v_133 (@or v_134 1))
+                                     (v_132 (@or 385 v_133))
+                                     (v_131 (@shift-right v_132 1))
+                                     (v_135 (@byte-write v_131))
+                                     (v_130 (@and v_90 127))
+                                     (v_129 (@or 257 v_130))
+                                     (v_128 (@shift-right v_129 1))
+                                     (v_127 (@byte-write v_128)))
+                                (ret-fun$23 v_127))))
+                           (else_28
+                            (cnt ()
+                              (let* ((then_29
+                                      (cnt ()
+                                        (let* ((v_124 (@shift-right v_90 12))
+                                               (v_123 (@or v_124 1))
+                                               (v_122 (@or 449 v_123))
+                                               (v_121 (@shift-right v_122 1))
+                                               (v_125 (@byte-write v_121))
+                                               (v_120 (@shift-right v_90 6))
+                                               (v_119 (@or v_120 1))
+                                               (v_118 (@and v_119 127))
+                                               (v_117 (@or 257 v_118))
+                                               (v_116 (@shift-right v_117 1))
+                                               (v_126 (@byte-write v_116))
+                                               (v_115 (@and v_90 127))
+                                               (v_114 (@or 257 v_115))
+                                               (v_113 (@shift-right v_114 1))
+                                               (v_112 (@byte-write v_113)))
+                                          (ret-fun$23 v_112))))
+                                     (else_29
+                                      (cnt ()
+                                        (let* ((v_108 (@shift-right v_90 18))
+                                               (v_107 (@or v_108 1))
+                                               (v_106 (@or 481 v_107))
+                                               (v_105 (@shift-right v_106 1))
+                                               (v_109 (@byte-write v_105))
+                                               (v_104 (@shift-right v_90 12))
+                                               (v_103 (@or v_104 1))
+                                               (v_102 (@and v_103 127))
+                                               (v_101 (@or 257 v_102))
+                                               (v_100 (@shift-right v_101 1))
+                                               (v_110 (@byte-write v_100))
+                                               (v_99 (@shift-right v_90 6))
+                                               (v_98 (@or v_99 1))
+                                               (v_97 (@and v_98 127))
+                                               (v_96 (@or 257 v_97))
+                                               (v_95 (@shift-right v_96 1))
+                                               (v_111 (@byte-write v_95))
+                                               (v_94 (@and v_90 127))
+                                               (v_93 (@or 257 v_94))
+                                               (v_92 (@shift-right v_93 1))
+                                               (v_91 (@byte-write v_92)))
+                                          (ret-fun$23 v_91)))))
+                                (if (@<= v_90 131071) then_29 else_29)))))
+                      (if (@<= v_90 4095) then_28 else_28)))))
+            (if (@<= v_90 255) then_27 else_27))))
+       (fun$32_1
+        (fun (ret env x y)
+          (let* ((x_1 (@xor x 1)) (v_138 (@+ x_1 y))) (ret v_138))))
+       (fun$36_1
+        (fun (ret_1 env_1 x_2 y_1)
+          (let* ((y_2 (@xor y_1 1)) (v_139 (@- x_2 y_2))) (ret_1 v_139))))
+       (loop_31
+        (fun (ret-loop_4 i_6)
+          (let* ((join_10
+                  (cnt (v_141)
+                    (let* ((i_11 (@xor i_6 1))
+                           (i_10 (@% i_11 20))
+                           (v_148 (@xor i_10 1))
+                           (v_147 (@xor v_148 1))
+                           (v_146 (@- 1 v_147))
+                           (v_145 (@xor v_146 1))
+                           (v_144 (@+ v_145 97))
+                           (v_143 (@shift-left v_144 2))
+                           (v_142 (@xor v_143 2)))
+                      (fun$23_1 ret-loop_4 v_142))))
+                 (then_30
+                  (cnt ()
+                    (let* ((i_9 (@xor i_6 1))
+                           (i_8 (@/ i_9 20))
+                           (i_7 (@shift-left i_8 1))
+                           (v_140 (@xor i_7 1)))
+                      (loop_31 join_10 v_140))))
+                 (else_30 (cnt () (join_10 2))))
+            (if (@<= i_6 -19) then_30 else_30))))
+       (fun$161_1
+        (fun (ret-fun$161 s)
+          (let* ((s_2 (@block-length s))
+                 (s_1 (@shift-left s_2 1))
+                 (v_149 (@xor s_1 1))
+                 (then_31
+                  (cnt ()
+                    (let* ((v_150 (@block-get s 0))
+                           (rc_11
+                            (cnt (r_11)
+                              (let* ((then_32
+                                      (cnt ()
+                                        (let* ((v_151 (@block-get s 1))
+                                               (rc_12
+                                                (cnt (r_12)
+                                                  (let* ((then_33
+                                                          (cnt ()
+                                                            (let* ((v_152
+                                                                    (@block-get
+                                                                     s
+                                                                     2))
+                                                                   (rc_13
+                                                                    (cnt (r_13)
+                                                                      (let* ((then_34
+                                                                              (cnt ()
+                                                                                (let* ((v_153
+                                                                                        (@block-get
+                                                                                         s
+                                                                                         3))
+                                                                                       (rc_14
+                                                                                        (cnt (r_14)
+                                                                                          (let* ((then_35
+                                                                                                  (cnt ()
+                                                                                                    (let* ((v_154
+                                                                                                            (@block-get
+                                                                                                             s
+                                                                                                             4))
+                                                                                                           (rc_15
+                                                                                                            (cnt (r_15)
+                                                                                                              (let* ((then_36
+                                                                                                                      (cnt ()
+                                                                                                                        (let* ((v_155
+                                                                                                                                (@block-get
+                                                                                                                                 s
+                                                                                                                                 5))
+                                                                                                                               (rc_16
+                                                                                                                                (cnt (r_16)
+                                                                                                                                  (let* ((then_37
+                                                                                                                                          (cnt ()
+                                                                                                                                            (let* ((v_156
+                                                                                                                                                    (@block-get
+                                                                                                                                                     s
+                                                                                                                                                     6))
+                                                                                                                                                   (rc_17
+                                                                                                                                                    (cnt (r_17)
+                                                                                                                                                      (let ((loop_16
+                                                                                                                                                             (cnt (i_12)
+                                                                                                                                                               (let* ((then_38
+                                                                                                                                                                       (cnt ()
+                                                                                                                                                                         (let* ((i_14
+                                                                                                                                                                                 (@shift-right
+                                                                                                                                                                                  i_12
+                                                                                                                                                                                  1))
+                                                                                                                                                                                (v_157
+                                                                                                                                                                                 (@block-get
+                                                                                                                                                                                  s
+                                                                                                                                                                                  i_14))
+                                                                                                                                                                                (rc_18
+                                                                                                                                                                                 (cnt (r_18)
+                                                                                                                                                                                   (let* ((i_13
+                                                                                                                                                                                           (@xor
+                                                                                                                                                                                            i_12
+                                                                                                                                                                                            1))
+                                                                                                                                                                                          (v_158
+                                                                                                                                                                                           (@+
+                                                                                                                                                                                            i_13
+                                                                                                                                                                                            3)))
+                                                                                                                                                                                     (loop_16
+                                                                                                                                                                                      v_158)))))
+                                                                                                                                                                           (fun$23_1
+                                                                                                                                                                            rc_18
+                                                                                                                                                                            v_157))))
+                                                                                                                                                                      (else_38
+                                                                                                                                                                       (cnt ()
+                                                                                                                                                                         (ret-fun$161
+                                                                                                                                                                          2))))
+                                                                                                                                                                 (if (@<
+                                                                                                                                                                      i_12
+                                                                                                                                                                      v_149)
+                                                                                                                                                                   then_38
+                                                                                                                                                                   else_38)))))
+                                                                                                                                                        (loop_16
+                                                                                                                                                         15)))))
+                                                                                                                                              (fun$23_1
+                                                                                                                                               rc_17
+                                                                                                                                               v_156))))
+                                                                                                                                         (else_37
+                                                                                                                                          (cnt ()
+                                                                                                                                            (ret-fun$161
+                                                                                                                                             2))))
+                                                                                                                                    (if (@<
+                                                                                                                                         13
+                                                                                                                                         v_149)
+                                                                                                                                      then_37
+                                                                                                                                      else_37)))))
+                                                                                                                          (fun$23_1
+                                                                                                                           rc_16
+                                                                                                                           v_155))))
+                                                                                                                     (else_36
+                                                                                                                      (cnt ()
+                                                                                                                        (ret-fun$161
+                                                                                                                         2))))
+                                                                                                                (if (@<
+                                                                                                                     11
+                                                                                                                     v_149)
+                                                                                                                  then_36
+                                                                                                                  else_36)))))
+                                                                                                      (fun$23_1
+                                                                                                       rc_15
+                                                                                                       v_154))))
+                                                                                                 (else_35
+                                                                                                  (cnt ()
+                                                                                                    (ret-fun$161
+                                                                                                     2))))
+                                                                                            (if (@<
+                                                                                                 9
+                                                                                                 v_149)
+                                                                                              then_35
+                                                                                              else_35)))))
+                                                                                  (fun$23_1
+                                                                                   rc_14
+                                                                                   v_153))))
+                                                                             (else_34
+                                                                              (cnt ()
+                                                                                (ret-fun$161
+                                                                                 2))))
+                                                                        (if (@<
+                                                                             7
+                                                                             v_149)
+                                                                          then_34
+                                                                          else_34)))))
+                                                              (fun$23_1
+                                                               rc_13
+                                                               v_152))))
+                                                         (else_33
+                                                          (cnt ()
+                                                            (ret-fun$161 2))))
+                                                    (if (@< 5 v_149)
+                                                      then_33
+                                                      else_33)))))
+                                          (fun$23_1 rc_12 v_151))))
+                                     (else_32 (cnt () (ret-fun$161 2))))
+                                (if (@< 3 v_149) then_32 else_32)))))
+                      (fun$23_1 rc_11 v_150))))
+                 (else_31 (cnt () (ret-fun$161 2))))
+            (if (@< 1 v_149) then_31 else_31))))
+       (fun$205_1
+        (fun (ret-fun$205 v_159 b n) (loop_32 ret-fun$205 v_159 b n 1)))
+       (loop_32
+        (fun (ret-loop_30 v_160 b_1 n_1 carry)
+          (let* ((b_3 (@block-tag b_1))
+                 (b_2 (@shift-left b_3 1))
+                 (v_161 (@xor b_2 1))
+                 (then_39
+                  (cnt ()
+                    (let* ((then_40 (cnt () (ret-loop_30 v_160)))
+                           (else_40
+                            (cnt ()
+                              (let* ((v_178 (@block-alloc-3 2))
+                                     (v_179 (@block-set! v_178 0 carry))
+                                     (v_180 (@block-set! v_178 1 v_160)))
+                                (ret-loop_30 v_178)))))
+                      (if (@= 1 carry) then_40 else_40))))
+                 (else_39
+                  (cnt ()
+                    (let* ((v_177 (@block-get b_1 0))
+                           (v_176 (@xor v_177 1))
+                           (n_2 (@shift-right n_1 1))
+                           (v_175 (@* v_176 n_2))
+                           (v_174 (@xor v_175 1))
+                           (v_173 (@xor v_174 1))
+                           (v_172 (@+ v_173 carry))
+                           (v_170 (@xor v_172 1))
+                           (v_171 (@% v_170 20000))
+                           (v_165 (@xor v_171 1))
+                           (v_162 (@block-get b_1 1))
+                           (v_169 (@/ v_170 20000))
+                           (v_168 (@shift-left v_169 1))
+                           (v_163 (@xor v_168 1))
+                           (rc_19
+                            (cnt (r_19)
+                              (let* ((v_164 (@block-alloc-3 2))
+                                     (v_166 (@block-set! v_164 0 v_165))
+                                     (v_167 (@block-set! v_164 1 r_19)))
+                                (ret-loop_30 v_164)))))
+                      (loop_32 rc_19 v_160 v_162 n_1 v_163)))))
+            (if (@= 5 v_161) then_39 else_39))))
+       (bignum-*_1
+        (fun (ret-bignum-* v_181 b1 b2)
+          (let* ((b1_2 (@block-tag b1))
+                 (b1_1 (@shift-left b1_2 1))
+                 (v_182 (@xor b1_1 1))
+                 (then_41 (cnt () (ret-bignum-* v_181)))
+                 (else_41
+                  (cnt ()
+                    (let* ((v_183 (@block-get b1 0))
+                           (rc_20
+                            (cnt (r_20)
+                              (let* ((v_184 (@block-get b1 1))
+                                     (rc_21
+                                      (cnt (r_21)
+                                        (let ((rc_22
+                                               (cnt (r_22)
+                                                 (loop_33
+                                                  ret-bignum-*
+                                                  v_181
+                                                  r_20
+                                                  r_22
+                                                  1))))
+                                          (fun$205_1 rc_22 v_181 r_21 20001)))))
+                                (bignum-*_1 rc_21 v_181 v_184 b2)))))
+                      (fun$205_1 rc_20 v_181 b2 v_183)))))
+            (if (@= 5 v_182) then_41 else_41))))
+       (loop_33
+        (fun (ret-loop_29 v_185 b1_3 b2_1 carry_1)
+          (let* ((b1_5 (@block-tag b1_3))
+                 (b1_4 (@shift-left b1_5 1))
+                 (v_186 (@xor b1_4 1))
+                 (then_42
+                  (cnt ()
+                    (let* ((then_45 (cnt () (ret-loop_29 b2_1)))
+                           (else_45
+                            (cnt ()
+                              (let* ((v_208 (@block-alloc-3 2))
+                                     (v_209 (@block-set! v_208 0 carry_1))
+                                     (v_210 (@block-set! v_208 1 v_185)))
+                                (loop_33 ret-loop_29 v_185 v_208 b2_1 1)))))
+                      (if (@= 1 carry_1) then_45 else_45))))
+                 (else_42
+                  (cnt ()
+                    (let* ((b2_3 (@block-tag b2_1))
+                           (b2_2 (@shift-left b2_3 1))
+                           (v_187 (@xor b2_2 1))
+                           (then_43
+                            (cnt ()
+                              (let* ((then_44 (cnt () (ret-loop_29 b1_3)))
+                                     (else_44
+                                      (cnt ()
+                                        (let* ((v_205 (@block-alloc-3 2))
+                                               (v_206
+                                                (@block-set! v_205 0 carry_1))
+                                               (v_207
+                                                (@block-set! v_205 1 v_185)))
+                                          (loop_33
+                                           ret-loop_29
+                                           v_185
+                                           b1_3
+                                           v_205
+                                           1)))))
+                                (if (@= 1 carry_1) then_44 else_44))))
+                           (else_43
+                            (cnt ()
+                              (let* ((v_202 (@block-get b1_3 0))
+                                     (v_204 (@block-get b2_1 0))
+                                     (v_203 (@xor v_204 1))
+                                     (v_201 (@+ v_203 carry_1))
+                                     (v_200 (@xor v_202 1))
+                                     (v_199 (@+ v_200 v_201))
+                                     (v_197 (@xor v_199 1))
+                                     (v_198 (@% v_197 20000))
+                                     (v_192 (@xor v_198 1))
+                                     (v_188 (@block-get b1_3 1))
+                                     (v_189 (@block-get b2_1 1))
+                                     (v_196 (@/ v_197 20000))
+                                     (v_195 (@shift-left v_196 1))
+                                     (v_190 (@xor v_195 1))
+                                     (rc_23
+                                      (cnt (r_23)
+                                        (let* ((v_191 (@block-alloc-3 2))
+                                               (v_193
+                                                (@block-set! v_191 0 v_192))
+                                               (v_194
+                                                (@block-set! v_191 1 r_23)))
+                                          (ret-loop_29 v_191)))))
+                                (loop_33 rc_23 v_185 v_188 v_189 v_190)))))
+                      (if (@= 5 v_187) then_43 else_43)))))
+            (if (@= 5 v_186) then_42 else_42))))
+       (bignum-fact_1
+        (fun (ret-bignum-fact v_211 n_3)
+          (let* ((then_46
+                  (cnt ()
+                    (let* ((v_216 (@block-alloc-3 2))
+                           (v_217 (@block-set! v_216 0 3))
+                           (v_218 (@block-set! v_216 1 v_211)))
+                      (ret-bignum-fact v_216))))
+                 (else_46
+                  (cnt ()
+                    (let* ((v_213 (@block-alloc-3 2))
+                           (v_214 (@block-set! v_213 0 n_3))
+                           (v_215 (@block-set! v_213 1 v_211))
+                           (v_212 (@- n_3 2))
+                           (rc_24
+                            (cnt (r_24)
+                              (bignum-*_1 ret-bignum-fact v_211 v_213 r_24))))
+                      (bignum-fact_1 rc_24 v_211 v_212)))))
+            (if (@= 1 n_3) then_46 else_46))))
+       (fun$32 (@block-alloc-202 1))
+       (fun$32_2 (@block-set! fun$32 0 fun$32_1))
+       (fun$36 (@block-alloc-202 1))
+       (fun$36_2 (@block-set! fun$36 0 fun$36_1))
+       (v_9 (@block-alloc-2 0))
+       (v (@block-alloc-200 14))
+       (v_219 (@block-set! v 0 566))
+       (v_220 (@block-set! v 1 782))
+       (v_221 (@block-set! v 2 798))
+       (v_222 (@block-set! v 3 934))
+       (v_223 (@block-set! v 4 894))
+       (v_224 (@block-set! v 5 918))
+       (v_225 (@block-set! v 6 846))
+       (v_226 (@block-set! v 7 782))
+       (v_227 (@block-set! v 8 870))
+       (v_228 (@block-set! v 9 262))
+       (v_229 (@block-set! v 10 894))
+       (v_230 (@block-set! v 11 822))
+       (v_231 (@block-set! v 12 510))
+       (v_232 (@block-set! v 13 262))
+       (rc
+        (cnt (r)
+          (let* ((rc_2
+                  (cnt (r_4)
+                    (let* ((rc_5
+                            (cnt (r_5)
+                              (let* ((v_8 (@block-alloc-200 4))
+                                     (v_35 (@block-set! v_8 0 270))
+                                     (v_36 (@block-set! v_8 1 262))
+                                     (v_37 (@block-set! v_8 2 494))
+                                     (v_38 (@block-set! v_8 3 262))
+                                     (rc_6
+                                      (cnt (r_6)
+                                        (let ((rc_7
+                                               (cnt (r_7)
+                                                 (let ((loop_8
+                                                        (cnt (z l)
+                                                          (let* ((l_5
+                                                                  (@block-tag
+                                                                   l))
+                                                                 (l_4
+                                                                  (@shift-left
+                                                                   l_5
+                                                                   1))
+                                                                 (v_10
+                                                                  (@xor l_4 1))
+                                                                 (then_7
+                                                                  (cnt ()
+                                                                    (let* ((v_16
+                                                                            (@block-get
+                                                                             z
+                                                                             0))
+                                                                           (rc_8
+                                                                            (cnt (r_8)
+                                                                              (let* ((v_19
+                                                                                      (@block-get
+                                                                                       z
+                                                                                       1))
+                                                                                     (loop_6
+                                                                                      (cnt (l_1)
+                                                                                        (let* ((l_3
+                                                                                                (@block-tag
+                                                                                                 l_1))
+                                                                                               (l_2
+                                                                                                (@shift-left
+                                                                                                 l_3
+                                                                                                 1))
+                                                                                               (v_20
+                                                                                                (@xor
+                                                                                                 l_2
+                                                                                                 1))
+                                                                                               (then_10
+                                                                                                (cnt ()
+                                                                                                  (let ((rc_10
+                                                                                                         (cnt (r_10)
+                                                                                                           (halt 0))))
+                                                                                                    (fun$23_1
+                                                                                                     rc_10
+                                                                                                     86))))
+                                                                                               (else_10
+                                                                                                (cnt ()
+                                                                                                  (let* ((v_21
+                                                                                                          (@block-get
+                                                                                                           l_1
+                                                                                                           0))
+                                                                                                         (rc_9
+                                                                                                          (cnt (r_9)
+                                                                                                            (let ((v_34
+                                                                                                                   (@block-get
+                                                                                                                    l_1
+                                                                                                                    1)))
+                                                                                                              (loop_6
+                                                                                                               v_34))))
+                                                                                                         (join_2
+                                                                                                          (cnt (v_22)
+                                                                                                            (let* ((join_6
+                                                                                                                    (cnt (v_28)
+                                                                                                                      (let* ((join_8
+                                                                                                                              (cnt (v_31)
+                                                                                                                                (let* ((join_9
+                                                                                                                                        (cnt (v_32)
+                                                                                                                                          (let* ((then_22
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (loop_31
+                                                                                                                                                     rc_9
+                                                                                                                                                     v_21)))
+                                                                                                                                                 (else_22
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (let* ((i_5
+                                                                                                                                                            (@xor
+                                                                                                                                                             v_21
+                                                                                                                                                             1))
+                                                                                                                                                           (v_33
+                                                                                                                                                            (@-
+                                                                                                                                                             1
+                                                                                                                                                             i_5)))
+                                                                                                                                                      (loop_31
+                                                                                                                                                       rc_9
+                                                                                                                                                       v_33)))))
+                                                                                                                                            (if (@<=
+                                                                                                                                                 v_21
+                                                                                                                                                 1)
+                                                                                                                                              then_22
+                                                                                                                                              else_22))))
+                                                                                                                                       (then_21
+                                                                                                                                        (cnt ()
+                                                                                                                                          (fun$23_1
+                                                                                                                                           join_9
+                                                                                                                                           366)))
+                                                                                                                                       (else_21
+                                                                                                                                        (cnt ()
+                                                                                                                                          (join_9
+                                                                                                                                           2))))
+                                                                                                                                  (if (@<
+                                                                                                                                       v_21
+                                                                                                                                       1)
+                                                                                                                                    then_21
+                                                                                                                                    else_21))))
+                                                                                                                             (then_18
+                                                                                                                              (cnt ()
+                                                                                                                                (loop_31
+                                                                                                                                 join_8
+                                                                                                                                 1)))
+                                                                                                                             (else_18
+                                                                                                                              (cnt ()
+                                                                                                                                (let* ((join_7
+                                                                                                                                        (cnt (v_29)
+                                                                                                                                          (let* ((then_20
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (loop_31
+                                                                                                                                                     rc_9
+                                                                                                                                                     v_21)))
+                                                                                                                                                 (else_20
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (let* ((i_4
+                                                                                                                                                            (@xor
+                                                                                                                                                             v_21
+                                                                                                                                                             1))
+                                                                                                                                                           (v_30
+                                                                                                                                                            (@-
+                                                                                                                                                             1
+                                                                                                                                                             i_4)))
+                                                                                                                                                      (loop_31
+                                                                                                                                                       rc_9
+                                                                                                                                                       v_30)))))
+                                                                                                                                            (if (@<=
+                                                                                                                                                 v_21
+                                                                                                                                                 1)
+                                                                                                                                              then_20
+                                                                                                                                              else_20))))
+                                                                                                                                       (then_19
+                                                                                                                                        (cnt ()
+                                                                                                                                          (fun$23_1
+                                                                                                                                           join_7
+                                                                                                                                           366)))
+                                                                                                                                       (else_19
+                                                                                                                                        (cnt ()
+                                                                                                                                          (join_7
+                                                                                                                                           2))))
+                                                                                                                                  (if (@<
+                                                                                                                                       v_21
+                                                                                                                                       1)
+                                                                                                                                    then_19
+                                                                                                                                    else_19)))))
+                                                                                                                        (if (@<
+                                                                                                                             v_21
+                                                                                                                             21)
+                                                                                                                          then_18
+                                                                                                                          else_18))))
+                                                                                                                   (then_12
+                                                                                                                    (cnt ()
+                                                                                                                      (loop_31
+                                                                                                                       join_6
+                                                                                                                       1)))
+                                                                                                                   (else_12
+                                                                                                                    (cnt ()
+                                                                                                                      (let* ((join_4
+                                                                                                                              (cnt (v_25)
+                                                                                                                                (let* ((join_5
+                                                                                                                                        (cnt (v_26)
+                                                                                                                                          (let* ((then_17
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (loop_31
+                                                                                                                                                     rc_9
+                                                                                                                                                     v_21)))
+                                                                                                                                                 (else_17
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (let* ((i_3
+                                                                                                                                                            (@xor
+                                                                                                                                                             v_21
+                                                                                                                                                             1))
+                                                                                                                                                           (v_27
+                                                                                                                                                            (@-
+                                                                                                                                                             1
+                                                                                                                                                             i_3)))
+                                                                                                                                                      (loop_31
+                                                                                                                                                       rc_9
+                                                                                                                                                       v_27)))))
+                                                                                                                                            (if (@<=
+                                                                                                                                                 v_21
+                                                                                                                                                 1)
+                                                                                                                                              then_17
+                                                                                                                                              else_17))))
+                                                                                                                                       (then_16
+                                                                                                                                        (cnt ()
+                                                                                                                                          (fun$23_1
+                                                                                                                                           join_5
+                                                                                                                                           366)))
+                                                                                                                                       (else_16
+                                                                                                                                        (cnt ()
+                                                                                                                                          (join_5
+                                                                                                                                           2))))
+                                                                                                                                  (if (@<
+                                                                                                                                       v_21
+                                                                                                                                       1)
+                                                                                                                                    then_16
+                                                                                                                                    else_16))))
+                                                                                                                             (then_13
+                                                                                                                              (cnt ()
+                                                                                                                                (loop_31
+                                                                                                                                 join_4
+                                                                                                                                 1)))
+                                                                                                                             (else_13
+                                                                                                                              (cnt ()
+                                                                                                                                (let* ((join_3
+                                                                                                                                        (cnt (v_23)
+                                                                                                                                          (let* ((then_15
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (loop_31
+                                                                                                                                                     rc_9
+                                                                                                                                                     v_21)))
+                                                                                                                                                 (else_15
+                                                                                                                                                  (cnt ()
+                                                                                                                                                    (let* ((i_2
+                                                                                                                                                            (@xor
+                                                                                                                                                             v_21
+                                                                                                                                                             1))
+                                                                                                                                                           (v_24
+                                                                                                                                                            (@-
+                                                                                                                                                             1
+                                                                                                                                                             i_2)))
+                                                                                                                                                      (loop_31
+                                                                                                                                                       rc_9
+                                                                                                                                                       v_24)))))
+                                                                                                                                            (if (@<=
+                                                                                                                                                 v_21
+                                                                                                                                                 1)
+                                                                                                                                              then_15
+                                                                                                                                              else_15))))
+                                                                                                                                       (then_14
+                                                                                                                                        (cnt ()
+                                                                                                                                          (fun$23_1
+                                                                                                                                           join_3
+                                                                                                                                           366)))
+                                                                                                                                       (else_14
+                                                                                                                                        (cnt ()
+                                                                                                                                          (join_3
+                                                                                                                                           2))))
+                                                                                                                                  (if (@<
+                                                                                                                                       v_21
+                                                                                                                                       1)
+                                                                                                                                    then_14
+                                                                                                                                    else_14)))))
+                                                                                                                        (if (@<
+                                                                                                                             v_21
+                                                                                                                             21)
+                                                                                                                          then_13
+                                                                                                                          else_13)))))
+                                                                                                              (if (@<
+                                                                                                                   v_21
+                                                                                                                   201)
+                                                                                                                then_12
+                                                                                                                else_12))))
+                                                                                                         (then_11
+                                                                                                          (cnt ()
+                                                                                                            (loop_31
+                                                                                                             join_2
+                                                                                                             1)))
+                                                                                                         (else_11
+                                                                                                          (cnt ()
+                                                                                                            (join_2
+                                                                                                             2))))
+                                                                                                    (if (@<
+                                                                                                         v_21
+                                                                                                         2001)
+                                                                                                      then_11
+                                                                                                      else_11)))))
+                                                                                          (if (@=
+                                                                                               5
+                                                                                               v_20)
+                                                                                            then_10
+                                                                                            else_10)))))
+                                                                                (loop_6
+                                                                                 v_19))))
+                                                                           (join_1
+                                                                            (cnt (v_17)
+                                                                              (let* ((then_9
+                                                                                      (cnt ()
+                                                                                        (loop_31
+                                                                                         rc_8
+                                                                                         v_16)))
+                                                                                     (else_9
+                                                                                      (cnt ()
+                                                                                        (let* ((i_1
+                                                                                                (@xor
+                                                                                                 v_16
+                                                                                                 1))
+                                                                                               (v_18
+                                                                                                (@-
+                                                                                                 1
+                                                                                                 i_1)))
+                                                                                          (loop_31
+                                                                                           rc_8
+                                                                                           v_18)))))
+                                                                                (if (@<=
+                                                                                     v_16
+                                                                                     1)
+                                                                                  then_9
+                                                                                  else_9))))
+                                                                           (then_8
+                                                                            (cnt ()
+                                                                              (fun$23_1
+                                                                               join_1
+                                                                               366)))
+                                                                           (else_8
+                                                                            (cnt ()
+                                                                              (join_1
+                                                                               2))))
+                                                                      (if (@<
+                                                                           v_16
+                                                                           1)
+                                                                        then_8
+                                                                        else_8))))
+                                                                 (else_7
+                                                                  (cnt ()
+                                                                    (let* ((v_13
+                                                                            (@block-get
+                                                                             l
+                                                                             0))
+                                                                           (v_11
+                                                                            (@block-alloc-3
+                                                                             2))
+                                                                           (v_14
+                                                                            (@block-set!
+                                                                             v_11
+                                                                             0
+                                                                             v_13))
+                                                                           (v_15
+                                                                            (@block-set!
+                                                                             v_11
+                                                                             1
+                                                                             z))
+                                                                           (v_12
+                                                                            (@block-get
+                                                                             l
+                                                                             1)))
+                                                                      (loop_8
+                                                                       v_11
+                                                                       v_12)))))
+                                                            (if (@= 5 v_10)
+                                                              then_7
+                                                              else_7)))))
+                                                   (loop_8 v_9 r_7)))))
+                                          (bignum-fact_1 rc_7 v_9 r_4)))))
+                                (fun$161_1 rc_6 v_8))))
+                           (join
+                            (cnt (v_6)
+                              (let* ((then_6 (cnt () (loop_31 rc_5 r_4)))
+                                     (else_6
+                                      (cnt ()
+                                        (let* ((i (@xor r_4 1)) (v_7 (@- 1 i)))
+                                          (loop_31 rc_5 v_7)))))
+                                (if (@<= r_4 1) then_6 else_6))))
+                           (then_5 (cnt () (fun$23_1 join 366)))
+                           (else_5 (cnt () (join 2))))
+                      (if (@< r_4 1) then_5 else_5))))
+                 (rc_1
+                  (cnt (r_1)
+                    (let* ((loop_3
+                            (cnt (acc-f acc)
+                              (let ((rc_3
+                                     (cnt (r_2)
+                                       (let* ((v_3 (@shift-right r_2 2))
+                                              (then_3
+                                               (cnt ()
+                                                 (let* ((then_4
+                                                         (cnt ()
+                                                           (let* ((acc_2
+                                                                   (@xor acc 1))
+                                                                  (acc_1
+                                                                   (@*
+                                                                    acc_2
+                                                                    10))
+                                                                  (v_4
+                                                                   (@xor
+                                                                    acc_1
+                                                                    1))
+                                                                  (v_5
+                                                                   (@- v_3 96))
+                                                                  (rc_4
+                                                                   (cnt (r_3)
+                                                                     (loop_3
+                                                                      acc-f
+                                                                      r_3)))
+                                                                  (acc-f_1
+                                                                   (@block-get
+                                                                    acc-f
+                                                                    0)))
+                                                             (acc-f_1
+                                                              rc_4
+                                                              acc-f
+                                                              v_4
+                                                              v_5))))
+                                                        (else_4
+                                                         (cnt () (rc_2 acc))))
+                                                   (if (@<= v_3 115)
+                                                     then_4
+                                                     else_4))))
+                                              (else_3 (cnt () (rc_2 acc))))
+                                         (if (@<= 97 v_3) then_3 else_3)))))
+                                (fun$12_1 rc_3))))
+                           (then (cnt () (loop_3 fun$36 1)))
+                           (else
+                            (cnt ()
+                              (let* ((v_1 (@shift-right r_1 2))
+                                     (then_1
+                                      (cnt ()
+                                        (let* ((then_2
+                                                (cnt ()
+                                                  (let ((v_2 (@- v_1 96)))
+                                                    (loop_3 fun$32 v_2))))
+                                               (else_2 (cnt () (rc_2 1))))
+                                          (if (@<= v_1 115) then_2 else_2))))
+                                     (else_1 (cnt () (rc_2 1))))
+                                (if (@<= 97 v_1) then_1 else_1)))))
+                      (if (@= r_1 366) then else)))))
+            (fun$12_1 rc_1)))))
+  (fun$161_1 rc v))
