@@ -148,6 +148,16 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
         ptr_value
       }
 
+      fn add_vars_for_locals(&mut self, tree: &Tree<'a>) {
+        visit_bb(
+          tree,
+          |name, prim, args| {
+            self.add_var(&name);
+          },
+          |tree| {},
+        );
+      }
+
       fn arg_value(&self, arg: &Atom<'a>) -> IntValue<'ctx> {
         match arg {
           Atom::AtomL(value) => make_value(self.context, *value),
@@ -168,6 +178,21 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
         self.builder.build_unconditional_branch(*block);
       }
 
+      fn emit_call(
+        &self,
+        name: &'a str,
+        args: &[BasicValueEnum<'ctx>],
+        node_name: &str,
+      ) -> IntValue<'ctx> {
+        let fn_value = get_fn_value(self.module, name);
+        let call = self.builder.build_call(fn_value, args, node_name);
+        call
+          .try_as_basic_value()
+          .left()
+          .expect("Failed to generate call")
+          .into_int_value()
+      }
+
       // Call a local continuation
       fn emit_cnt_call_direct(&self, cnt_name: &Name<'a>, value_opt: Option<IntValue<'ctx>>) {
         let cnt = self.all_cnts.get(cnt_name).unwrap();
@@ -184,12 +209,35 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       }
 
       fn emit_block(&self, tree: &Tree<'a>) {
+        let b = &self.builder;
         visit_bb(
           tree,
           // Handle value primitives
           |name, prim, args| {
-            // TODO: Handle ValuePrimitives
-            unimplemented!()
+            let var = self.vars.get(&name).unwrap();
+            let mut args = args.clone();
+            let mut args = args.drain(..);
+            let mut next_arg = || self.arg_value(&args.next().unwrap());
+
+            use ValuePrimitive::*;
+            let result = match prim {
+              CPSAdd => b.build_int_add(next_arg(), next_arg(), "cpsadd"),
+              CPSSub => b.build_int_sub(next_arg(), next_arg(), "cpssub"),
+              CPSMul => b.build_int_mul(next_arg(), next_arg(), "cpsmul"),
+              CPSDiv => b.build_int_signed_div(next_arg(), next_arg(), "cpsdiv"),
+              // TODO: Check that `srem` behaves like L3's `%`
+              CPSMod => b.build_int_signed_rem(next_arg(), next_arg(), "cpsmod"),
+              CPSShiftLeft => b.build_left_shift(next_arg(), next_arg(), "cpsshiftleft"),
+              CPSShiftRight => b.build_right_shift(next_arg(), next_arg(), true, "cpsshiftright"),
+              CPSXOr => b.build_xor(next_arg(), next_arg(), "cpsxor"),
+              CPSAnd => b.build_and(next_arg(), next_arg(), "cpsand"),
+              CPSOr => b.build_or(next_arg(), next_arg(), "cpsor"),
+              CPSId => next_arg(),
+              CPSByteRead => self.emit_call("rt_byteread", &[], "cpsbyteread"),
+              CPSByteWrite => self.emit_call("rt_bytewrite", &[next_arg().into()], "cpsbytewrite"),
+              _ => unreachable!(),
+            };
+            self.builder.build_store(*var, result);
           },
           // Handle rest of the continuation
           |tree| match tree {
@@ -214,18 +262,12 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
             } => {
               let fun = self.program.get_function(fun_name);
               assert_eq!(fun.params.len(), args.len());
-              let fn_value = get_fn_value(self.module, fun_name.0);
+
               let args = args
                 .iter()
                 .map(|arg| self.arg_value(arg).into())
                 .collect::<Vec<BasicValueEnum>>();
-
-              let result = self.builder.build_call(fn_value, &args, "call_fun");
-              let result = result
-                .try_as_basic_value()
-                .left()
-                .expect("Failed to generate call")
-                .into_int_value();
+              let result = self.emit_call(fun_name.0, &args, "call_fun");
 
               if *ret_cnt == self.ret_cnt_name {
                 self.emit_cnt_call_indirect(result);
@@ -260,15 +302,7 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
             }
 
             Halt { arg } => {
-              let fn_value = get_fn_value(self.module, "rt_halt");
-              let call = self
-                .builder
-                .build_call(fn_value, &[self.arg_value(arg).into()], "halt");
-              let call = call
-                .try_as_basic_value()
-                .left()
-                .expect("Failed to generate halt call")
-                .into_int_value();
+              let call = self.emit_call("rt_halt", &[self.arg_value(arg).into()], "halt");
               self.builder.build_return(Some(&call));
             }
 
@@ -294,26 +328,23 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     state.builder.position_at_end(entry);
 
     // Create stack allocations for all bindings
+    // (LLVM should promote these to temporary registers during compilation.)
 
-    // Allocate function parameter bindings
+    // Allocate function parameter bindings and locals
     for (param, name) in fn_value.get_param_iter().zip(fun.params.iter()) {
       let var = state.add_var(name);
       state.builder.build_store(var, param);
     }
 
-    // Allocate continuation parameter and local bindings, register continuations
+    state.add_vars_for_locals(&fun.body);
+
+    // Allocate continuation parameters and locals, register continuations
     visit_cnts(&fun.body, |cnt| {
       for param_name in &cnt.params {
         state.add_var(param_name);
       }
 
-      visit_bb(
-        &cnt.body,
-        |name, prim, args| {
-          state.add_var(&name);
-        },
-        |tree| {},
-      );
+      state.add_vars_for_locals(&cnt.body);
 
       let block = self.context.append_basic_block(fn_value, cnt.name.0);
       state.blocks.insert(cnt.name, block);

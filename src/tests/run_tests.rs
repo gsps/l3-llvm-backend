@@ -30,8 +30,26 @@ test_run!(
   1
 );
 test_run!(
+  test_app_first,
+  "(let* ((f (fun (r x y) (r x))) (c (cnt (z) (halt z)))) (f c 1 2))",
+  None,
+  1
+);
+test_run!(
   test_app_second,
   "(let* ((f (fun (r x y) (r y))) (c (cnt (z) (halt z)))) (f c 1 2))",
   None,
   2
+);
+test_run!(
+  test_prim_add,
+  "(let* ((x (@+ 1 2))) (halt x))",
+  None,
+  3
+);
+test_run!(
+  test_prim_bytewrite,
+  "(let* ((x (@byte-write 43))) (halt x))",
+  Some("+"),
+  43
 );
