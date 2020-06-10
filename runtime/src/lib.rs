@@ -42,11 +42,6 @@ const MEMORY_SIZE: usize = 1024 * 1024 / 4;
 pub static mut MEMORY: [Value; MEMORY_SIZE] = [0; MEMORY_SIZE];
 static mut MEMORY_OFFSET: usize = 0;
 
-#[no_mangle]
-pub extern "C" fn rt_get_memory() -> *mut u32 {
-  unsafe { &mut MEMORY[0] as *mut u32 }
-}
-
 fn pack_header(tag: u8, size: u32) -> Value {
   size << 8 | (tag as Value)
 }

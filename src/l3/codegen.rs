@@ -82,14 +82,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       program,
     };
 
-    // let g_memory = module.add_global(
-    //   value_type(cg.context).ptr_type(AddressSpace::Generic),
-    //   None,
-    //   "MEMORY",
-    // );
-    // g_memory.set_linkage(Linkage::Internal);
-    // assert!(g_memory.is_declaration());
-
     let funs = cg.program.functions();
     for fun in &funs {
       add_function(cg.context, cg.module, fun.name, &fun.params);
@@ -442,22 +434,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
     // Complete the function entry block
     state.builder.position_at_end(entry);
 
-    // // Initialize memory global, if this is the program entry point
-    // if fun.name.0 == MAIN_FN {
-    //   let fn_value = get_fn_value(self.module, "rt_get_memory");
-    //   let call = state
-    //     .builder
-    //     .build_call(fn_value, &[], "fetch_memory_ptr")
-    //     .try_as_basic_value()
-    //     .left()
-    //     .expect("Failed to generate call")
-    //     .into_pointer_value();
-    //   let g_memory = self.module.get_global("MEMORY").unwrap();
-    //   state
-    //     .builder
-    //     .build_store(g_memory.as_basic_value_enum().into_pointer_value(), call);
-    // }
-
     // Emit the actual function body
     state.emit_block(&fun.body);
 
@@ -499,13 +475,6 @@ fn register_rt_functions<'ctx>(ctx: &'ctx Context, module: &Module<'ctx>) -> () 
     let params = params.iter().map(|p| Name(p)).collect();
     add_function(ctx, module, name, &params);
   }
-
-  // // Add get_memory function, which returns the start of the program MEMORY
-  // {
-  //   let ret_type = value_type(ctx).ptr_type(AddressSpace::Generic);
-  //   let fn_type = ret_type.fn_type(&vec![], false);
-  //   module.add_function("rt_get_memory", fn_type, None);
-  // }
 }
 
 use l3_llvm_runtime::*;
@@ -528,24 +497,8 @@ static RT_BLOCKGET: extern "C" fn(Value, Value) -> Value = rt_blockget;
 #[used]
 static RT_BLOCKSET: extern "C" fn(Value, Value, Value) -> Value = rt_blockset;
 
-// type Value = u32;
-// extern "C" {
-//   pub fn rt_halt(x: Value) -> Value;
-//   pub fn rt_bytewrite(x: Value) -> Value;
-//   pub fn rt_byteread() -> Value;
-//   pub fn rt_get_memory() -> *mut u32;
-//   pub fn rt_blockalloc(tag: u32, size: Value) -> Value;
-//   pub fn rt_blocktag(block: Value) -> Value;
-//   pub fn rt_blocklength(block: Value) -> Value;
-//   pub fn rt_blockget(block: Value, offset: Value) -> Value;
-//   pub fn rt_blockset(block: Value, offset: Value, value: Value) -> Value;
-// }
-
 /// Entrypoint
 pub fn compile_and_run_program(program: &Program) -> () {
-  // // Doesn't do anything, but forces the runtime library to be linked
-  // unsafe { rt_get_memory() };
-
   let context = Context::create();
   let module = context.create_module("the_module");
   let builder = context.create_builder();
