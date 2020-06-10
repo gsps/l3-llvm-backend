@@ -2,6 +2,16 @@ use std::io::{Read, Write};
 
 pub type Value = u32;
 
+#[no_mangle]
+pub extern "C" fn rt_halt(x: Value) -> Value {
+  std::io::stdout()
+    .flush()
+    .expect("Failed to flush stdout before exit");
+  std::process::exit(x as i32)
+}
+
+/// IO
+
 fn read_byte() -> u8 {
   std::io::stdin()
     .bytes()
@@ -23,20 +33,19 @@ pub extern "C" fn rt_byteread() -> Value {
   read_byte() as Value
 }
 
-#[no_mangle]
-pub extern "C" fn rt_halt(x: Value) -> Value {
-  std::io::stdout()
-    .flush()
-    .expect("Failed to flush stdout before exit");
-  std::process::exit(x as i32)
-}
-
 /// Simple bump allocator
 
 const MEMORY_SIZE: usize = 1024 * 1024 / 4;
+
 #[used]
-static mut MEMORY: [Value; MEMORY_SIZE] = [0; MEMORY_SIZE];
+#[no_mangle]
+pub static mut MEMORY: [Value; MEMORY_SIZE] = [0; MEMORY_SIZE];
 static mut MEMORY_OFFSET: usize = 0;
+
+#[no_mangle]
+pub extern "C" fn rt_get_memory() -> *mut u32 {
+  unsafe { &mut MEMORY[0] as *mut u32 }
+}
 
 fn pack_header(tag: u8, size: u32) -> Value {
   size << 8 | (tag as Value)

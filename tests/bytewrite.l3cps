@@ -1,0 +1,1 @@
+(let* ((x (@byte-write 65))) (halt x))

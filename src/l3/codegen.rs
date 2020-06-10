@@ -11,9 +11,9 @@ use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::passes::PassManager;
-use inkwell::types::{BasicTypeEnum, IntType};
+use inkwell::types::{BasicTypeEnum, FunctionType, IntType};
 use inkwell::values::{BasicValue, BasicValueEnum, FunctionValue, IntValue, PointerValue};
-use inkwell::{IntPredicate, OptimizationLevel};
+use inkwell::{AddressSpace, IntPredicate, OptimizationLevel};
 
 type CgResult<T> = Result<T, &'static str>;
 
@@ -33,6 +33,15 @@ fn make_value<'ctx>(ctx: &'ctx Context, v: u32) -> IntValue<'ctx> {
   value_type(ctx).const_int(v.into(), false)
 }
 
+fn fn_type_for_values<'ctx>(ctx: &'ctx Context, n: usize) -> FunctionType<'ctx> {
+  let ret_type = value_type(ctx);
+  let param_types = std::iter::repeat(ret_type)
+    .take(n)
+    .map(|f| f.into())
+    .collect::<Vec<BasicTypeEnum>>();
+  ret_type.fn_type(&param_types, false)
+}
+
 fn get_fn_value<'a, 'ctx>(module: &Module<'ctx>, name: &'a str) -> FunctionValue<'ctx> {
   module
     .get_function(name)
@@ -47,13 +56,7 @@ fn add_function<'a, 'ctx>(
   name: Name<'a>,
   params: &Params<'a>,
 ) -> FunctionValue<'ctx> {
-  let ret_type = value_type(ctx);
-  let param_types = std::iter::repeat(ret_type)
-    .take(params.len())
-    .map(|f| f.into())
-    .collect::<Vec<BasicTypeEnum>>();
-  let fn_type = ret_type.fn_type(&param_types, false);
-
+  let fn_type = fn_type_for_values(ctx, params.len());
   let fn_value = module.add_function(name.0, fn_type, None);
   for (param, param_name) in fn_value.get_param_iter().zip(params.iter()) {
     param.into_int_value().set_name(param_name.0);
@@ -78,6 +81,14 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       module,
       program,
     };
+
+    // let g_memory = module.add_global(
+    //   value_type(cg.context).ptr_type(AddressSpace::Generic),
+    //   None,
+    //   "MEMORY",
+    // );
+    // g_memory.set_linkage(Linkage::Internal);
+    // assert!(g_memory.is_declaration());
 
     let funs = cg.program.functions();
     for fun in &funs {
@@ -135,7 +146,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       context: &'ctx Context,
       builder: Builder<'ctx>,
       module: &'a Module<'ctx>,
-      program: &'a Program<'a>,
       ret_cnt_name: Name<'a>,
       blocks: HashMap<Name<'a>, BasicBlock<'ctx>>,
       vars: HashMap<Name<'a>, PointerValue<'ctx>>,
@@ -153,23 +163,39 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       fn add_vars_for_locals(&mut self, tree: &Tree<'a>) {
         visit_bb(
           tree,
-          |name, prim, args| {
+          |name, _prim, _args| {
             self.add_var(&name);
           },
-          |tree| {},
+          |_tree| {},
         );
       }
 
       fn arg_value(&self, arg: &Atom<'a>) -> IntValue<'ctx> {
         match arg {
           Atom::AtomL(value) => make_value(self.context, *value),
-          Atom::AtomN(arg_name) => {
-            let var = self
-              .vars
-              .get(arg_name)
-              .unwrap_or_else(|| panic!("Unknown variable {:?}", arg_name));
-            self.builder.build_load(*var, arg_name.0).into_int_value()
-          }
+          Atom::AtomN(arg_name) => match self.vars.get(arg_name) {
+            Some(var) => self.builder.build_load(*var, arg_name.0).into_int_value(),
+            None => {
+              // Load a function pointer
+              // NOTE: This is currently very brittle, since we rely on the upper 32 bits being
+              // insignificant, in the sense that the main function pointer's upper 32 bits are
+              // assumed to be equivalent to all the other functions'. This justifies only storing
+              // the lower 32 bits in closure blocks.
+              // In principle, we should be able to force this behavior during linking, but I have
+              // not discovered how to do this yet, so currently we just hope that our functions
+              // all lie within the same 32 upper bits.
+              let fn_value = get_fn_value(self.module, arg_name.0);
+              let fn_global_value = fn_value.as_global_value();
+              let fn_ptr_value = fn_global_value.as_pointer_value();
+
+              let offset = self.builder.build_ptr_to_int(
+                fn_ptr_value,
+                value_type(self.context),
+                "fn_ptr_to_int",
+              );
+              offset
+            }
+          },
         }
       }
 
@@ -194,15 +220,45 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
         call
           .try_as_basic_value()
           .left()
-          .expect("Failed to generate call")
+          .expect("Failed to generate direct call")
+          .into_int_value()
+      }
+
+      fn emit_indirect_call(
+        &self,
+        fun_arg_name: Name<'a>,
+        args: &[BasicValueEnum<'ctx>],
+        node_name: &str,
+      ) -> IntValue<'ctx> {
+        let b = &self.builder;
+        // See `arg_value()` for an explanation of how function pointers are stored
+        let fn_ptr = {
+          let i64_type = self.context.i64_type();
+          let mask_upper = i64_type.const_int(0xffffffff00000000, false);
+          let fn_ptr_main = get_fn_value(self.module, MAIN_FN)
+            .as_global_value()
+            .as_pointer_value();
+          let fn_ptr_main = b.build_ptr_to_int(fn_ptr_main, i64_type, "fn_ptr_main_as_i64");
+          let fn_ptr_main = b.build_and(fn_ptr_main, mask_upper, "fn_ptr_main_mask_upper");
+          let fn_ptr_lower = self.arg_value(&Atom::AtomN(fun_arg_name));
+          let fn_ptr_lower = b.build_int_z_extend(fn_ptr_lower, i64_type, "fn_ptr_lower_as_i64");
+          let fn_ptr_main = b.build_or(fn_ptr_main, fn_ptr_lower, "fn_ptr_combine");
+          let fn_ptr_type =
+            fn_type_for_values(self.context, args.len()).ptr_type(AddressSpace::Generic);
+          b.build_int_to_ptr(fn_ptr_main, fn_ptr_type, "fn_ptr_cast")
+        };
+        b.build_call(fn_ptr, args, node_name)
+          .try_as_basic_value()
+          .left()
+          .expect("Failed to generate indirect call")
           .into_int_value()
       }
 
       // Call a local continuation
-      fn emit_cnt_call_direct(&self, cnt_name: &Name<'a>, value_opt: Option<IntValue<'ctx>>) {
+      fn emit_cnt_call_direct(&self, cnt_name: &Name<'a>, args: &[BasicValueEnum<'ctx>],) {
         let cnt = self.all_cnts.get(cnt_name).unwrap();
-        assert_eq!(cnt.params.len(), value_opt.iter().len());
-        for (param_name, value) in cnt.params.iter().zip(value_opt.iter()) {
+        assert_eq!(cnt.params.len(), args.len());
+        for (param_name, value) in cnt.params.iter().zip(args.iter()) {
           self.emit_assignment(param_name, *value);
         }
         self.emit_jump_to(cnt_name);
@@ -262,7 +318,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
                 &[next_arg().into(), next_arg().into(), next_arg().into()],
                 "cpsblockset",
               ),
-              _ => unimplemented!(),
             };
             self.builder.build_store(*var, result);
           },
@@ -274,11 +329,11 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
                 let result = self.arg_value(args.first().unwrap());
                 self.emit_cnt_call_indirect(result);
               } else {
-                match args.as_slice() {
-                  [] => self.emit_cnt_call_direct(cnt, None),
-                  [arg] => self.emit_cnt_call_direct(cnt, Some(self.arg_value(arg))),
-                  _ => unreachable!(),
-                }
+                let args = args
+                  .iter()
+                  .map(|arg| self.arg_value(arg).into())
+                  .collect::<Vec<BasicValueEnum>>();
+                self.emit_cnt_call_direct(cnt, &args);
               }
             }
 
@@ -287,20 +342,24 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
               ret_cnt,
               args,
             } => {
-              // TODO: Handle indirect calls (and references to functions as pointers)
-              let fun = self.program.get_function(fun_name);
-              assert_eq!(fun.params.len(), args.len());
-
               let args = args
                 .iter()
                 .map(|arg| self.arg_value(arg).into())
                 .collect::<Vec<BasicValueEnum>>();
-              let result = self.emit_call(fun_name.0, &args, "call_fun");
+
+              let result = if let Some(fn_value) = self.module.get_function(fun_name.0) {
+                // Direct call
+                assert_eq!(fn_value.count_params() as usize, args.len());
+                self.emit_call(fun_name.0, &args, "call_fun")
+              } else {
+                // Indirect call
+                self.emit_indirect_call(*fun_name, &args, "call_closure")
+              };
 
               if *ret_cnt == self.ret_cnt_name {
                 self.emit_cnt_call_indirect(result);
               } else {
-                self.emit_cnt_call_direct(ret_cnt, Some(result));
+                self.emit_cnt_call_direct(ret_cnt, &[result.as_basic_value_enum()]);
               }
             }
 
@@ -344,7 +403,6 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
       context: self.context,
       builder: self.context.create_builder(),
       module: self.module,
-      program: self.program,
       ret_cnt_name: fun.ret_cnt,
       blocks: HashMap::new(),
       vars: HashMap::new(),
@@ -383,6 +441,24 @@ impl<'a, 'ctx> Codegen<'a, 'ctx> {
 
     // Complete the function entry block
     state.builder.position_at_end(entry);
+
+    // // Initialize memory global, if this is the program entry point
+    // if fun.name.0 == MAIN_FN {
+    //   let fn_value = get_fn_value(self.module, "rt_get_memory");
+    //   let call = state
+    //     .builder
+    //     .build_call(fn_value, &[], "fetch_memory_ptr")
+    //     .try_as_basic_value()
+    //     .left()
+    //     .expect("Failed to generate call")
+    //     .into_pointer_value();
+    //   let g_memory = self.module.get_global("MEMORY").unwrap();
+    //   state
+    //     .builder
+    //     .build_store(g_memory.as_basic_value_enum().into_pointer_value(), call);
+    // }
+
+    // Emit the actual function body
     state.emit_block(&fun.body);
 
     // Emit one basic block per continuation
@@ -423,6 +499,13 @@ fn register_rt_functions<'ctx>(ctx: &'ctx Context, module: &Module<'ctx>) -> () 
     let params = params.iter().map(|p| Name(p)).collect();
     add_function(ctx, module, name, &params);
   }
+
+  // // Add get_memory function, which returns the start of the program MEMORY
+  // {
+  //   let ret_type = value_type(ctx).ptr_type(AddressSpace::Generic);
+  //   let fn_type = ret_type.fn_type(&vec![], false);
+  //   module.add_function("rt_get_memory", fn_type, None);
+  // }
 }
 
 use l3_llvm_runtime::*;
@@ -445,8 +528,24 @@ static RT_BLOCKGET: extern "C" fn(Value, Value) -> Value = rt_blockget;
 #[used]
 static RT_BLOCKSET: extern "C" fn(Value, Value, Value) -> Value = rt_blockset;
 
+// type Value = u32;
+// extern "C" {
+//   pub fn rt_halt(x: Value) -> Value;
+//   pub fn rt_bytewrite(x: Value) -> Value;
+//   pub fn rt_byteread() -> Value;
+//   pub fn rt_get_memory() -> *mut u32;
+//   pub fn rt_blockalloc(tag: u32, size: Value) -> Value;
+//   pub fn rt_blocktag(block: Value) -> Value;
+//   pub fn rt_blocklength(block: Value) -> Value;
+//   pub fn rt_blockget(block: Value, offset: Value) -> Value;
+//   pub fn rt_blockset(block: Value, offset: Value, value: Value) -> Value;
+// }
+
 /// Entrypoint
 pub fn compile_and_run_program(program: &Program) -> () {
+  // // Doesn't do anything, but forces the runtime library to be linked
+  // unsafe { rt_get_memory() };
+
   let context = Context::create();
   let module = context.create_module("the_module");
   let builder = context.create_builder();
@@ -465,6 +564,8 @@ pub fn compile_and_run_program(program: &Program) -> () {
   // Compile
   Codegen::compile(&context, &builder, &fpm, &module, program)
     .unwrap_or_else(|e| panic!("Failed to compile program: {}", e));
+  // module.print_to_stderr();
+  // eprintln!("-----");
 
   // Run
   {

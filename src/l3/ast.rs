@@ -137,29 +137,31 @@ impl<'a> Program<'a> {
     use Tree::*;
 
     // During parsing, all applications are represented as AppCs, to avoid the need for
-    // name analyis. This function rewrites AppCs into AppFs when they refer to functions.
-    fn fix_apps<'a>(seen_funs: &mut HashSet<Name<'a>>, tree: &mut Tree<'a>) -> () {
+    // name analyis. This function rewrites AppCs into AppFs when they don't refer to
+    // continuations. In all other cases calls are to functions (direct or indirect).
+    fn fix_apps<'a>(seen_cnts: &mut HashSet<Name<'a>>, tree: &mut Tree<'a>) -> () {
       match tree {
-        LetP { body, .. } => fix_apps(seen_funs, body),
+        LetP { body, .. } => fix_apps(seen_cnts, body),
         LetC { cnts, body } => {
+          for cnt in &*cnts {
+            seen_cnts.insert(cnt.name);
+          }
           for cnt in cnts {
             let body = &mut Rc::get_mut(cnt).unwrap().body;
-            fix_apps(seen_funs, body)
+            fix_apps(seen_cnts, body)
           }
-          fix_apps(seen_funs, body)
+          fix_apps(seen_cnts, body)
         }
         LetF { funs, body } => {
-          for fun in &*funs {
-            seen_funs.insert(fun.name);
-          }
           for fun in funs {
+            seen_cnts.insert(fun.ret_cnt);
             let body = &mut Rc::get_mut(fun).unwrap().body;
-            fix_apps(seen_funs, body)
+            fix_apps(seen_cnts, body)
           }
-          fix_apps(seen_funs, body)
+          fix_apps(seen_cnts, body)
         }
         AppC { cnt: name, args } => {
-          if seen_funs.contains(&name) {
+          if !seen_cnts.contains(&name) {
             assert!(args.len() > 0);
             let dummy = Halt {
               arg: Atom::AtomL(0),
@@ -241,9 +243,5 @@ impl<'a> Program<'a> {
 
   pub fn functions(&self) -> Vec<Rc<Fun<'a>>> {
     self.symbols.funs.values().map(|fun| fun.clone()).collect()
-  }
-
-  pub fn get_function(&self, name: &Name<'a>) -> Rc<Fun<'a>> {
-    self.symbols.funs.get(name).unwrap().clone()
   }
 }

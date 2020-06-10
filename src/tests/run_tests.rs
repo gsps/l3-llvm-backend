@@ -1,5 +1,3 @@
-extern crate l3_llvm_runtime;
-
 extern crate assert_cmd;
 use assert_cmd::Command;
 
@@ -52,6 +50,19 @@ test_run!(
   "(let* ((x (@byte-write 43))) (halt x))",
   Some("+"),
   43
+);
+test_run!(
+  test_indirect_call,
+  "\
+(let* (
+  (f (fun (r) (r 42)))
+  (c (cnt (x) (halt x)))
+  (cl (@block-alloc-202 1))
+  (cli (@block-set! cl 0 f))
+  (ff (@block-get cl 0)))
+    (ff c))",
+  None,
+  42
 );
 test_run!(
   test_fact_example,

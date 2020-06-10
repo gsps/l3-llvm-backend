@@ -1,0 +1,7 @@
+(let* (
+  (f (fun (r) (r 42)))
+  (c (cnt (x) (halt x)))
+  (cl (@block-alloc-202 1))
+  (cli (@block-set! cl 0 f))
+  (ff (@block-get cl 0)))
+    (ff c))

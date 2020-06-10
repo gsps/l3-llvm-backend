@@ -223,8 +223,8 @@ macro_rules! parse_test {
 
 parse_test!(test_halt, "(halt 0)");
 parse_test!(test_halt_withnl, "(halt\nb)");
-parse_test!(test_app_f0, "(f 0)");
 parse_test!(test_app_fn, "(f n)");
+parse_test!(test_app_fn0, "(f n 0)");
 parse_test!(test_app_fabc, "(f a b 123 c)");
 parse_test!(test_app_fwithnums, "(f999 r88 g7)");
 parse_test!(test_if_lt, "(if (@< 0 x) c1 c2)");
