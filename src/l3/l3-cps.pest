@@ -16,7 +16,7 @@ halt = { "halt" ~ argument }
 app = { name ~ argument* }
 
 value_primitive = { "+" | "-" | "*" | "/" | "%" | "shift-left" | "shift-right" | "and" | "or" | "xor" | "byte-read" | "byte-write" | "block-alloc-" ~ block_tag | "block-tag" | "block-length" | "block-get" | "block-set!" | "id" }
-block_tag       = { ASCII_ALPHANUMERIC }
+block_tag       = @{ ASCII_DIGIT+ }
 test_primitive  = { "<=" | "<" | "=" }
 
 argument  = _{ name | literal }

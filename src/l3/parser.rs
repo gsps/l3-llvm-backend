@@ -61,7 +61,8 @@ pub fn parse_l3cps_program(input: &str) -> Result<Program, Error<Rule>> {
       s => {
         if s.starts_with("block-alloc-") {
           let mut pairs = pair.into_inner();
-          CPSBlockAlloc(pairs.next().unwrap().as_str().parse().unwrap())
+          let tag = pairs.next().unwrap().as_str();
+          CPSBlockAlloc(tag.parse().unwrap())
         } else {
           unreachable!()
         }
