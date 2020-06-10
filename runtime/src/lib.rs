@@ -25,6 +25,9 @@ pub extern "C" fn rt_bytewrite(x: Value) -> Value {
   std::io::stdout()
     .write(&[x as u8])
     .expect("Failed to write byte");
+  std::io::stdout()
+    .flush()
+    .expect("Failed to flush stdout");
   x
 }
 
